@@ -1,0 +1,83 @@
+import Testing
+@testable import Casification
+
+@Suite
+struct CamelCaseModifierTests {
+	@Test
+	func automatic() async throws {
+		#expect("".case(.camel()) == "")
+		#expect("u".case(.camel()) == "u")
+		#expect("lowercase".case(.camel()) == "lowercase")
+		#expect("UPPERCASE".case(.camel()) == "Uppercase")
+		#expect("normalCamelCase".case(.camel()) == "normalCamelCase")
+		#expect("_normalCamelCase".case(.camel()) == "_normalCamelCase")
+		#expect("_normalCamelCase".case(.camel()) == "_normalCamelCase")
+		#expect("Almost.Correct.Case".case(.camel()) == "AlmostCorrectCase")
+		#expect("NumericSeparator.1.0".case(.camel()) == "NumericSeparator_1_0")
+		#expect("URLAcronym".case(.camel()) == "URLAcronym")
+		#expect("uuidAcronym".case(.camel()) == "uuidAcronym")
+		#expect("suffix-acronym-id".case(.camel()) == "suffixAcronymID")
+		#expect("infix-id-acronym".case(.camel()) == "infixIDAcronym")
+		#expect("WordWithAcronym_Identifier".case(.camel()) == "WordWithAcronymIdentifier")
+		#expect("UUIDIdentifier-combinedAcronyms".case(.camel()) == "UUIDIdentifierCombinedAcronyms")
+		#expect("1numbered".case(.camel()) == "_1_numbered")
+		#expect("1Numbered".case(.camel()) == "_1_Numbered")
+		#expect("_unknown.symbols<>_found".case(.camel()) == "_unknownSymbolsFound")
+		#expect(
+			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid".case(.camel())
+			== "__idUUIDIdentifierSomeRandomStringOfCases_1_23_IDFAUUID"
+		)
+	}
+
+	@Test
+	func camel() async throws {
+		#expect("".case(.camel) == "")
+		#expect("u".case(.camel) == "u")
+		#expect("lowercase".case(.camel) == "lowercase")
+		#expect("UPPERCASE".case(.camel) == "uppercase")
+		#expect("normalCamelCase".case(.camel) == "normalCamelCase")
+		#expect("_normalCamelCase".case(.camel) == "_normalCamelCase")
+		#expect("_normalCamelCase".case(.camel) == "_normalCamelCase")
+		#expect("Almost.Correct.Case".case(.camel) == "almostCorrectCase")
+		#expect("NumericSeparator.1.0".case(.camel) == "numericSeparator_1_0")
+		#expect("URLAcronym".case(.camel) == "urlAcronym")
+		#expect("uuidAcronym".case(.camel) == "uuidAcronym")
+		#expect("suffix-acronym-id".case(.camel) == "suffixAcronymID")
+		#expect("infix-id-acronym".case(.camel) == "infixIDAcronym")
+		#expect("WordWithAcronym_Identifier".case(.camel) == "wordWithAcronymIdentifier")
+		#expect("UUIDIdentifier-combinedAcronyms".case(.camel) == "uuidIdentifierCombinedAcronyms")
+		#expect("1numbered".case(.camel) == "_1_numbered")
+		#expect("1Numbered".case(.camel) == "_1_numbered")
+		#expect("_unknown.symbols<>_found".case(.camel) == "_unknownSymbolsFound")
+		#expect(
+			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid".case(.camel)
+			== "__idUUIDIdentifierSomeRandomStringOfCases_1_23_IDFAUUID"
+		)
+	}
+
+	@Test
+	func pascal() async throws {
+		#expect("".case(.pascal) == "")
+		#expect("u".case(.pascal) == "U")
+		#expect("lowercase".case(.pascal) == "Lowercase")
+		#expect("UPPERCASE".case(.pascal) == "Uppercase")
+		#expect("normalCamelCase".case(.pascal) == "NormalCamelCase")
+		#expect("_normalCamelCase".case(.pascal) == "_NormalCamelCase")
+		#expect("_normalCamelCase".case(.pascal) == "_NormalCamelCase")
+		#expect("Almost.Correct.Case".case(.pascal) == "AlmostCorrectCase")
+		#expect("NumericSeparator.1.0".case(.pascal) == "NumericSeparator_1_0")
+		#expect("URLAcronym".case(.pascal) == "URLAcronym")
+		#expect("uuidAcronym".case(.pascal) == "UUIDAcronym")
+		#expect("suffix-acronym-id".case(.pascal) == "SuffixAcronymID")
+		#expect("infix-id-acronym".case(.pascal) == "InfixIDAcronym")
+		#expect("WordWithAcronym_Identifier".case(.pascal) == "WordWithAcronymIdentifier")
+		#expect("UUIDIdentifier-combinedAcronyms".case(.pascal) == "UUIDIdentifierCombinedAcronyms")
+		#expect("1numbered".case(.pascal) == "_1_Numbered")
+		#expect("1Numbered".case(.pascal) == "_1_Numbered")
+		#expect("_unknown.symbols<>_found".case(.pascal) == "_UnknownSymbolsFound")
+		#expect(
+			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid".case(.pascal)
+			== "__IDUUIDIdentifierSomeRandomStringOfCases_1_23_IDFAUUID"
+		)
+	}
+}
