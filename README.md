@@ -1,36 +1,49 @@
 # swift-casification
 
-[![SwiftPM 6.2](https://img.shields.io/badge/swiftpm-6.2-ED523F.svg?style=flat)](https://swift.org/download/) ![Platforms](https://img.shields.io/badge/Platforms-iOS_13_|_macOS_10.15_|_Catalyst_|_tvOS_14_|_watchOS_7-ED523F.svg?style=flat) [![@capture_context](https://img.shields.io/badge/contact-@capture__context-1DA1F2.svg?style=flat&logo=twitter)](https://twitter.com/capture_context) 
+[![CI](https://github.com/capturecontext/swift-casification/actions/workflows/ci.yml/badge.svg)](https://github.com/capturecontext/swift-casification/actions/workflows/ci.yml) [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fcapturecontext%2Fswift-casification%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/capturecontext/swift-casification) [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fcapturecontext%2Fswift-casification%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/capturecontext/swift-casification)
 
-Package for tokenizing and case swapping for free strings
+Package for tokenizing and applying case transformations to arbitrary strings.
+
+## Table of contents
+
+- [Motivation](#motivation)
+- [Usage](#usage)
+  - [Basic modifiers](#basic-modifiers)
+  - [Token-based modifiers](#token-based-modifiers)
+  - [Composing modifiers](#composing-modifiers)
+  - [Custom modifiers](#custom-modifiers)
+- [Installation](#installation)
+- [License](#license)
+
+## Motivation
+
+Swift does not provide a standard way to tokenize strings or to build formatted strings from such tokens.
+
+As a result, even common transformations like `camelCase` are often implemented differently across projects, leading to duplicated logic and inconsistent results.
+
+This package focuses on providing a set of predefined, reusable string modifiers for common casing and formatting transformations, with consistent behavior across codebases.
 
 ## Usage
 
-There are a bunch of predefined case modifiers that you can use out of the box
+A set of predefined string modifiers is available out of the box
 
-#### Basic
+### Basic modifiers
 
 | Modifiers    | Examples                  |
 | :----------- | ------------------------- |
-| `upper`      | string -> STRING          |
+| `upper`      | string → STRING           |
 | `lower`      | STRING → string           |
-| `upperFirst` | strinG → StrinG           |
-| `lowerFirst` | STRINg → sTRINg           |
+| `upperFirst` | String → String           |
+| `lowerFirst` | STRING → sTRING           |
 | `capital`    | some string → Some String |
 | `swap`       | Some String → sOME sTRING |
 
-Any case modifiers can be combined with other ones by calling `combined(with:)`, keep in mind that the order matters and transformations are applied sequentially
+### Token-based modifiers
 
-```swift
-"myString".case(.lower.combined(with: .upperFirst)) // Mystring
-```
+Those modifiers are a bit more complex and do support configuration
 
-#### Programming
-
-Those modifiers are a bit more compex and do support configuration
-
-- `String.Casification.PrefixPredicate` allows to configure allowed prefixes, `.swiftDeclarations` is used by default allowing `$` and `_` symbols for prefixes
-- You can also pass list of acronyms, default list can be found here [`String.Casification.standardAcronyms`](./Sources/Casification/Casification.swift), there is no way to modify this list at least yet, but you can explicitly specify your own, we'll add modification mechanism in future versions of the library
+- `String.Casification.PrefixPredicate` allows configuring allowed prefixes, `.swiftDeclarations` is used by default allowing `$` and `_` symbols for prefixes
+- You can also provide a list of acronyms. The default list is available at [`String.Casification.standardAcronyms`](./Sources/Casification/Casification.swift), there is no way to modify this list at least yet, but you can explicitly specify your own, we'll add modification mechanism in future versions of the library.
 
 | Modifiers           | Examples                  |
 | ------------------- | ------------------------- |
@@ -46,14 +59,29 @@ Those modifiers are a bit more compex and do support configuration
 
 >  [!NOTE] 
 >
-> _Check out [Tests](./Tests/CasificationTests) for more examples_
+> _See [Tests](./Tests/CasificationTests) for more examples_
 
-### Creating custom modifiers
+### Composing modifiers
 
-For simple modifiers conforming your types to `String.Casification.Modifier` should be enough
+Modifiers can be combined using `combined(with:)` method. Order matters – transformations are applied sequentially.
+
+```swift
+// "myString" → "mystring" → "Mystring"
+"myString".case(.lower.combined(with: .upperFirst))
+```
+
+```swift
+// "myString" → "Mystring" → "mystring"
+"myString".case(.upperFirst.combined(with: .lower)) // mystring
+```
+
+### Custom modifiers
+
+For simple modifiers, conforming a type to `String.Casification.Modifier` is enough
 
 ```swift
 extension String.Casification.Modifiers {
+  /// Deletes input string
   public struct Delete: String.Casification.Modifier {
     public init() {}
     
@@ -63,19 +91,23 @@ extension String.Casification.Modifiers {
     }
   }
 }
-
-extension String.Casification.Modifier
-where Self == String.Casification.Modifiers.Delete {
-  @inlinable
-  public var delete: Self { .init() }
-}
-
-func test() {
-  "myString".case(.delete) // ""
-}
 ```
 
-For complex processing you can process [tokens](./Sources/Casification/Casification.swift) instead of raw strings by creating a type conforming to `String.Casification.TokensProcessor`
+> [!TIP]
+>
+> It's a good idea to declare convenience accessor for the protocol
+> ```swift
+> extension String.Casification.Modifier
+> where Self == String.Casification.Modifiers.Delete {
+>      public var delete: Self { .init() }
+> }
+> ```
+>
+> ```swift
+> "myString".case(.delete) // ""
+> ```
+
+For more complex processing, you can operate on [tokens](./Sources/Casification/Casification.swift) instead of raw strings by conforming to `String.Casification.TokensProcessor`
 
 ```swift
 extension String.Casification.TokensProcessors {
@@ -90,23 +122,23 @@ extension String.Casification.TokensProcessors {
   }
 }
 
-// This declaration looks heavy, but allows to
-// create a modifier from tokens processor without
-// creating a separate modifier type
 extension String.Casification.Modifier
 where Self == String.Casification.Modifier.ProcessingTokens<
   String.Casification.TokensProcessors.RemoveSeparators
 >{
-  @inlinable
   public var noSeparators: Self {
     .init(using: .init())
   }
 }
-
-func test() {
-  "my test-string".case(.noSeparators.combined(with: .upper)) // "MYTESTSTRING"
-}
 ```
+
+```swift
+"my test-string".case(.noSeparators) // "myteststring"
+```
+
+> [!NOTE]
+>
+> _The package is primarily designed around predefined reusable modifiers. Custom modifiers are supported, but declarations can be verbose due to namespacing and generic types._
 
 ## Installation
 
@@ -120,12 +152,12 @@ You can add Casification to an Xcode project by adding it as a package dependenc
 
 ### Recommended
 
-If you use SwiftPM for your project, you can add StandardExtensions to your package file.
+If you use SwiftPM for your project, you can add Casification to your package file.
 
 ```swift
 .package(
   url: "https://github.com/capturecontext/swift-casification.git", 
-  .upToNextMinor(from: "0.0.1")
+  .upToNextMinor(from: "0.1.0")
 )
 ```
 
