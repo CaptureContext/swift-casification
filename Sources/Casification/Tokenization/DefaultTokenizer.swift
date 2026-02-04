@@ -45,13 +45,14 @@ extension String.Casification.Tokenizers {
 			var currentStart = input.startIndex
 			var currentIndex = input.startIndex
 
-			func commitToken(upTo end: String.Index, kind: String.Casification.Token.Kind) {
+			func commitToken(upTo end: String.Index) {
 				guard currentStart < end else { return }
-				commitToken(input[currentStart..<end], kind: .word)
+				let value = input[currentStart..<end]
+				commitToken(value, kind: value.allSatisfy(\.isNumber) ? .number : .word)
 			}
 
 			func commitToken(_ value: Substring, kind: String.Casification.Token.Kind) {
-				if kind == .word, let last = tokens.last, last.kind != .separator {
+				if let last = tokens.last, last.kind != .separator, kind != .separator {
 					commitToken("", kind: .separator)
 				}
 
@@ -96,10 +97,10 @@ extension String.Casification.Tokenizers {
 			while currentIndex < input.endIndex {
 				do { // match acronyms
 					if let acronym = findAcronym(at: currentIndex) {
-						commitToken(upTo: currentIndex, kind: .word)
+						commitToken(upTo: currentIndex)
 
 						let end = input.index(currentIndex, offsetBy: acronym.count)
-						commitToken(input[currentIndex..<end], kind: .word)
+						commitToken(input[currentIndex..<end], kind: .acronym)
 						currentIndex = end
 						currentStart = end
 						continue
@@ -109,7 +110,7 @@ extension String.Casification.Tokenizers {
 				do { // match separators
 					let char = input[currentIndex]
 					if !char.isAlphanumeric {
-						commitToken(upTo: currentIndex, kind: .word)
+						commitToken(upTo: currentIndex)
 
 						let start = currentIndex
 						while
@@ -136,7 +137,7 @@ extension String.Casification.Tokenizers {
 
 						if shouldCommit {
 							currentIndex = nextIndex
-							commitToken(upTo: currentIndex, kind: .word)
+							commitToken(upTo: currentIndex)
 							currentStart = currentIndex
 							continue
 						}
@@ -146,7 +147,7 @@ extension String.Casification.Tokenizers {
 				currentIndex = input.index(after: currentIndex)
 			}
 
-			commitToken(upTo: currentIndex, kind: .word)
+			commitToken(upTo: currentIndex)
 			return tokens
 		}
 	}

@@ -16,7 +16,7 @@ struct TokenizationTests {
 			"".asToken(.separator),
 			"String".asToken(.word),
 			"".asToken(.separator),
-			"1".asToken(.word)
+			"1".asToken(.number)
 		])
 
 		#expect("snake_case"._tokenize() == [
@@ -59,13 +59,13 @@ struct TokenizationTests {
 	@Test
 	func withAcronyms() async throws {
 		#expect("UUIDJSON"._tokenize() == [
-			"UUID".asToken(.word),
+			"UUID".asToken(.acronym),
 			"".asToken(.separator),
-			"JSON".asToken(.word),
+			"JSON".asToken(.acronym),
 		])
 
 		#expect("UUIDString"._tokenize() == [
-			"UUID".asToken(.word),
+			"UUID".asToken(.acronym),
 			"".asToken(.separator),
 			"String".asToken(.word),
 		])
@@ -78,7 +78,7 @@ struct TokenizationTests {
 		#expect("hasUUIDacronym"._tokenize() == [
 			"has".asToken(.word),
 			"".asToken(.separator),
-			"UUID".asToken(.word),
+			"UUID".asToken(.acronym),
 			"".asToken(.separator),
 			"acronym".asToken(.word),
 		])
@@ -86,7 +86,7 @@ struct TokenizationTests {
 		#expect("HAS,uuid acronym"._tokenize() == [
 			"HAS".asToken(.word),
 			",".asToken(.separator),
-			"uuid".asToken(.word),
+			"uuid".asToken(.acronym),
 			" ".asToken(.separator),
 			"acronym".asToken(.word),
 		])
@@ -94,9 +94,9 @@ struct TokenizationTests {
 		#expect(
 			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid"._tokenize() == [
 				"__".asToken(.separator),
-				"id".asToken(.word),
+				"id".asToken(.acronym),
 				"".asToken(.separator),
-				"uuid".asToken(.word),
+				"uuid".asToken(.acronym),
 				"".asToken(.separator),
 				"Identifier".asToken(.word),
 				"".asToken(.separator),
@@ -110,13 +110,13 @@ struct TokenizationTests {
 				".".asToken(.separator),
 				"Cases".asToken(.word),
 				".".asToken(.separator),
-				"1".asToken(.word),
+				"1".asToken(.number),
 				".".asToken(.separator),
-				"23".asToken(.word),
+				"23".asToken(.number),
 				".".asToken(.separator),
-				"idfa".asToken(.word),
+				"idfa".asToken(.acronym),
 				"".asToken(.separator),
-				"Uuid".asToken(.word),
+				"Uuid".asToken(.acronym),
 			]
 		)
 	}

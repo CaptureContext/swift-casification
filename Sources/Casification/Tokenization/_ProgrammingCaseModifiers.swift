@@ -70,6 +70,7 @@ extension String.Casification.TokensProcessors {
 				var restOfTokens = tokens[firstNonSeparatorIndex...]
 				while restOfTokens.last?.kind == .separator { restOfTokens.removeLast() }
 
+				// used to detect first non-numeric token
 				var caughtNonNumeric = false
 
 				for (token, index) in zip(restOfTokens, restOfTokens.indices) {
@@ -91,7 +92,7 @@ extension String.Casification.TokensProcessors {
 							kind: token.kind
 						))
 					} else {
-						if token.value.allSatisfy(\.isNumber) {
+						if token.kind == .number {
 							output.append(.init(
 								numericModifier.transform(token.value),
 								kind: token.kind

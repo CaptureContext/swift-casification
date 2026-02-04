@@ -1,58 +1,162 @@
 import Foundation
 
 extension String.Casification.Modifiers {
-	public enum CamelCasePolicy {
-		 case automatic
-		 case camel
-		 case pascal
-	 }
+	@available(*, deprecated, renamed: "CamelCaseConfig.Mode")
+	public typealias CamelCasePolicy = CamelCaseConfig.Mode
+
+	public struct CamelCaseConfig {
+		public var mode: Mode
+		public var acronyms: Acronyms
+
+		public init(
+			mode: Mode = .automatic,
+			acronyms: Acronyms = .default
+		) {
+			self.mode = mode
+			self.acronyms = acronyms
+		}
+
+		@usableFromInline
+		func withMode(_ mode: Mode) -> Self {
+			.init(mode: mode, acronyms: acronyms)
+		}
+
+		public enum Mode {
+			case automatic
+			case camel
+			case pascal
+		}
+
+		public struct Acronyms {
+			@inlinable
+			public static var `default`: Self { .init() }
+
+			public enum ProcessingPolicy {
+				public static var `default`: Self { .alwaysMatchCase }
+
+				/// Keep acronyms as parsed
+				///
+				/// Examples:
+				/// - `"ID"` → `"ID"`
+				/// - `"Id"` → `"Id"`
+				/// - `"id"` → `"id"`
+				///
+				/// - Warning: Overrides camel case mode  when the first token is acronym
+				///
+				/// Examples:
+				/// - `"someString"` → `"someString"`
+				/// - `"uuidString"` → `"uuidString"`
+				/// - `"UuidString"` → `"UuidString"`
+				/// - `"UUIDString"` → `"UUIDString"`
+				case preserve
+
+				/// Always uppercase or lowercase acronyms
+				///
+				/// **Default processing policy**
+				///
+				/// Examples:
+				/// - `"ID"` → `"ID"`, or `"id"` if first token
+				/// - `"Id"` → `"ID"`, or `"id"` if first token
+				/// - `"id"` → `"ID"`, or `"id"` if first token
+				case alwaysMatchCase
+
+				/// Always capitalize acronyms
+				///
+				/// Examples:
+				/// - `"ID"` → `"Id"`
+				/// - `"Id"` → `"Id"`
+				/// - `"id"` → `"Id"`
+				///
+				/// - Warning: Overrides `Mode.camel` when the first token is acronym
+				///
+				/// Examples:
+				/// - `"someString"` → `"someString"`
+				/// - `"uuidString"` → `"UuidString"`
+				case alwaysCapitalize
+
+				/// Always capitalize acronyms
+				///
+				/// First token behaves like `.alwaysMatchCase`, rest tokens are processed like `.alwaysCapitalize`
+				///
+				/// Examples:
+				/// - `"ID"` → `"Id"`, or `"id"/"ID"` if first token
+				/// - `"Id"` → `"Id"`, or `"id"/"ID"` if first token
+				/// - `"id"` → `"Id"`, or `"id"/"ID"` if first token
+				case conditionalCapitalization
+			}
+
+			@usableFromInline
+			var reservedValues: Set<Substring> = .standardAcronyms
+
+			@usableFromInline
+			var processingPolicy: ProcessingPolicy
+
+			public init(
+				reservedValues: Set<Substring> = .standardAcronyms,
+				processingPolicy: ProcessingPolicy = .default
+			) {
+				self.reservedValues = reservedValues
+				self.processingPolicy = processingPolicy
+			}
+		}
+	}
 
 	public struct Camel<
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>: String.Casification.Modifier {
-		public typealias CapitalizationPolicy = CamelCasePolicy
-
 		@usableFromInline
 		struct FirstTokenModifier: String.Casification.Modifier {
 			@usableFromInline
-			internal var capitalizationPolicy: CapitalizationPolicy
+			internal var config: CamelCaseConfig
 
 			@usableFromInline
-			internal var reservedAcronyms: Set<Substring>
-
-			@usableFromInline
-			init(
-				capitalizationPolicy: CapitalizationPolicy,
-				reservedAcronyms: Set<Substring>
-			) {
-				self.capitalizationPolicy = capitalizationPolicy
-				self.reservedAcronyms = reservedAcronyms
+			init(config: CamelCaseConfig) {
+				self.config = config
 			}
 
 			@usableFromInline
-			func withCapitalizationPolicy(
-				_ capitalizationPolicy: CapitalizationPolicy
+			func withMode(
+				_ mode: CamelCaseConfig.Mode
 			) -> Self {
-				.init(
-					capitalizationPolicy: capitalizationPolicy,
-					reservedAcronyms: reservedAcronyms
-				)
+				.init(config: config.withMode(mode))
 			}
 
 			@usableFromInline
 			func transform(_ input: Substring) -> Substring {
-				switch capitalizationPolicy {
+				switch config.mode {
 				case .automatic:
-					guard let first = input.first else { return input }
+					guard let first = input.first
+					else { return input }
+
 					return first.isLowercase
-					? input.case(withCapitalizationPolicy(.camel))
-					: input.case(withCapitalizationPolicy(.pascal))
+					? input.case(withMode(.camel))
+					: input.case(withMode(.pascal))
+
 				case .pascal:
-					return reservedAcronyms.contains(input)
-					? input.case(.upper)
-					: input.case(.lower.combined(with: .upperFirst))
+					guard config.acronyms.reservedValues.contains(input)
+					else { return input.case(.lower.combined(with: .upperFirst)) }
+
+					switch config.acronyms.processingPolicy {
+					case .preserve:
+						return input
+					case .alwaysMatchCase, .conditionalCapitalization:
+						return input.case(.upper)
+					case .alwaysCapitalize:
+						return input.case(.lower.combined(with: .upperFirst))
+					}
+
 				case .camel:
-					return input.case(.lower)
+					guard config.acronyms.reservedValues.contains(input)
+					else { return input.case(.lower) }
+
+					switch config.acronyms.processingPolicy {
+					case .preserve:
+						return input
+					case .alwaysMatchCase, .conditionalCapitalization:
+						return input.case(.lower)
+					case .alwaysCapitalize:
+						return input.case(.lower.combined(with: .upperFirst))
+					}
 				}
 			}
 		}
@@ -60,28 +164,33 @@ extension String.Casification.Modifiers {
 		@usableFromInline
 		struct RestTokensModifier: String.Casification.Modifier {
 			@usableFromInline
-			internal var reservedAcronyms: Set<Substring>
+			internal var acronyms: CamelCaseConfig.Acronyms
 
 			@usableFromInline
 			init(
-				reservedAcronyms: Set<Substring>
+				acronyms: CamelCaseConfig.Acronyms
 			) {
-				self.reservedAcronyms = reservedAcronyms
+				self.acronyms = acronyms
 			}
 
 			@usableFromInline
 			func transform(_ input: Substring) -> Substring {
-				return reservedAcronyms.contains(input)
-				? input.case(.upper)
-				: input.case(.lower.combined(with: .upperFirst))
+				guard acronyms.reservedValues.contains(input)
+				else { return input.case(.lower.combined(with: .upperFirst)) }
+
+				switch acronyms.processingPolicy {
+				case .preserve:
+					return input
+				case .alwaysMatchCase:
+					return input.case(.upper)
+				case .alwaysCapitalize, .conditionalCapitalization:
+					return input.case(.lower.combined(with: .upperFirst))
+				}
 			}
 		}
 
 		@usableFromInline
-		internal let capitalizationPolicy: CapitalizationPolicy
-
-		@usableFromInline
-		internal let reservedAcronyms: Set<Substring>
+		internal let config: CamelCaseConfig
 
 		@usableFromInline
 		internal let prefixPredicate: PrefixPredicate
@@ -89,16 +198,34 @@ extension String.Casification.Modifiers {
 		@usableFromInline
 		internal let numericSeparator: Substring
 
+		@available(*, deprecated, renamed: "init(config:prefixPredicate:numericPrefix:)")
 		public init(
-			capitalizationPolicy: CapitalizationPolicy = .automatic,
+			capitalizationPolicy: CamelCaseConfig.Mode = .automatic,
 			acronyms: Set<Substring>,
 			prefixPredicate: PrefixPredicate,
-			numericSeparator: Substring = "_"
+			numericSeparator: Substring
 		) {
-			self.capitalizationPolicy = capitalizationPolicy
-			self.reservedAcronyms = acronyms
+			self.init(
+				config: .init(
+					mode: capitalizationPolicy,
+					acronyms: .init(
+						reservedValues: acronyms,
+						processingPolicy: .default
+					)
+				),
+				prefixPredicate: prefixPredicate,
+				numericPrefix: numericSeparator
+			)
+		}
+
+		public init(
+			config: CamelCaseConfig = .init(),
+			prefixPredicate: PrefixPredicate,
+			numericPrefix: Substring = "_"
+		) {
+			self.config = config
 			self.prefixPredicate = prefixPredicate
-			self.numericSeparator = numericSeparator
+			self.numericSeparator = numericPrefix
 		}
 
 		@inlinable
@@ -117,15 +244,14 @@ extension String.Casification.Modifiers {
 						return isNumericBoundary ? numericSeparator : ""
 					},
 					firstModifier: FirstTokenModifier(
-						capitalizationPolicy: capitalizationPolicy,
-						reservedAcronyms: reservedAcronyms
+						config: config
 					),
 					restModifier: RestTokensModifier(
-						reservedAcronyms: reservedAcronyms
+						acronyms: config.acronyms
 					),
 					numericModifier: .empty
 				),
-				acronyms: reservedAcronyms
+				acronyms: config.acronyms.reservedValues
 			))
 		}
 	}
@@ -144,34 +270,62 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 		.camel(.pascal)
 	}
 
+	@available(*, deprecated, renamed: "camel(_:acronyms:numericPrefix:)")
 	@inlinable
 	public static func camel(
-		_ policy: String.Casification.Modifiers.CamelCasePolicy = .automatic,
+		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
 		acronyms: Set<Substring> = String.Casification.standardAcronyms,
-		numericSeparator: Substring = "_"
+		numericSeparator: Substring
+	) -> Self {
+		return .camel(
+			mode,
+			acronyms: .init(reservedValues: acronyms),
+			numericPrefix: numericSeparator
+		)
+	}
+
+	@inlinable
+	public static func camel(
+		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
+		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
+		numericPrefix: Substring = "_"
 	) -> Self {
 		return .init(
-			capitalizationPolicy: policy,
-			acronyms: acronyms,
+			config: .init(mode: mode, acronyms: acronyms),
 			prefixPredicate: .swiftDeclarations,
-			numericSeparator: numericSeparator
+			numericPrefix: numericPrefix
 		)
 	}
 }
 
 extension String.Casification.Modifier where Self == String.Casification.Modifiers.AnyModifier {
+	@available(*, deprecated, renamed: "camel(_:acronyms:prefixPredicate:numericPrefix:)")
 	@inlinable
 	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
-		_ policy: String.Casification.Modifiers.CamelCasePolicy = .automatic,
+		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
 		acronyms: Set<Substring> = String.Casification.standardAcronyms,
 		prefixPredicate: PrefixPredicate,
-		numericSeparator: Substring = "_"
+		numericSeparator: Substring
+	) -> Self {
+		return .camel(
+			mode,
+			acronyms: .init(reservedValues: acronyms),
+			prefixPredicate: prefixPredicate,
+			numericPrefix: numericSeparator
+		)
+	}
+
+	@inlinable
+	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
+		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
+		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
+		prefixPredicate: PrefixPredicate,
+		numericPrefix: Substring = "_"
 	) -> Self {
 		return .init(String.Casification.Modifiers.Camel(
-			capitalizationPolicy: policy,
-			acronyms: acronyms,
+			config: .init(mode: mode, acronyms: acronyms),
 			prefixPredicate: prefixPredicate,
-			numericSeparator: numericSeparator
+			numericPrefix: numericPrefix
 		))
 	}
 }

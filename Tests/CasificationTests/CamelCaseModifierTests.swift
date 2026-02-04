@@ -80,4 +80,53 @@ struct CamelCaseModifierTests {
 			== "__IDUUIDIdentifierSomeRandomStringOfCases_1_23_IDFAUUID"
 		)
 	}
+
+	@Test
+	func alternativeAcronymProcessing() {
+		// NOTE: It uses `CamelCaseConfig.Mode.camel`
+
+		do { // default
+			// NOTE: Doesn't override `.camel` mode, first token is lowercased
+			#expect("url-ID-Uri-uuid".case(.alternativeCamel(.default)) == "urlIDURIUUID")
+			#expect("URL-ID-Uri-uuid".case(.alternativeCamel(.default)) == "urlIDURIUUID")
+			#expect("Url-ID-Uri-uuid".case(.alternativeCamel(.default)) == "urlIDURIUUID")
+		}
+
+		do { // alwaysMatchCase (default)
+			// NOTE: Doesn't override `.camel` mode, first token is lowercased
+			#expect("url-ID-Uri-uuid".case(.alternativeCamel(.alwaysMatchCase)) == "urlIDURIUUID")
+			#expect("URL-ID-Uri-uuid".case(.alternativeCamel(.alwaysMatchCase)) == "urlIDURIUUID")
+			#expect("Url-ID-Uri-uuid".case(.alternativeCamel(.alwaysMatchCase)) == "urlIDURIUUID")
+		}
+
+		do { // alwaysCapitalize
+			// NOTE: Overrides `.camel` mode, first token is capitalized as well as the rest of tokens
+			#expect("url-ID-Uri-uuid".case(.alternativeCamel(.alwaysCapitalize)) == "UrlIdUriUuid")
+			#expect("URL-ID-Uri-uuid".case(.alternativeCamel(.alwaysCapitalize)) == "UrlIdUriUuid")
+			#expect("Url-ID-Uri-uuid".case(.alternativeCamel(.alwaysCapitalize)) == "UrlIdUriUuid")
+		}
+
+		do { // conditionalCapitalization
+			// NOTE: Doesn't override `.camel` mode, first token is lowercased
+			#expect("url-ID-Uri-uuid".case(.alternativeCamel(.conditionalCapitalization)) == "urlIdUriUuid")
+			#expect("URL-ID-Uri-uuid".case(.alternativeCamel(.conditionalCapitalization)) == "urlIdUriUuid")
+			#expect("Url-ID-Uri-uuid".case(.alternativeCamel(.conditionalCapitalization)) == "urlIdUriUuid")
+		}
+
+		do { // preserve
+			// NOTE: Overrides `.camel` mode, first token is preserved as well as the rest of tokens
+			#expect("url-ID-Uri-uuid".case(.alternativeCamel(.preserve)) == "urlIDUriuuid")
+			#expect("URL-ID-Uri-uuid".case(.alternativeCamel(.preserve)) == "URLIDUriuuid")
+			#expect("Url-ID-Uri-uuid".case(.alternativeCamel(.preserve)) == "UrlIDUriuuid")
+		}
+	}
+}
+
+extension String.Casification.Modifier where Self == String.Casification.Modifiers.Camel<
+	String.Casification.PrefixPredicates.AllowedCharacters
+> {
+	typealias Policy = String.Casification.Modifiers.CamelCaseConfig.Acronyms.ProcessingPolicy
+	static func alternativeCamel(_ policy: Policy) -> Self {
+		.camel(.camel, acronyms: .init(processingPolicy: policy))
+	}
 }

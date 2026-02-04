@@ -49,6 +49,8 @@ extension String.Casification {
 
 		public enum Kind: Hashable {
 			case word
+			case number
+			case acronym
 			case separator
 		}
 	}
