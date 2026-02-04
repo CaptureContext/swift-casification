@@ -1,0 +1,20 @@
+version: 1
+builder:
+	configs:
+	- platform: ios
+		scheme: Casification
+	- platform: macos-xcodebuild
+		scheme: Casification
+	- platform: tvos
+		scheme: Casification
+	- platform: watchos
+		scheme: Casification
+	- platform: linux
+		scheme: Casification
+		swift_version: '6.0'
+	- platform: linux
+		scheme: Casification
+		swift_version: '5.9'
+
+	- documentation_targets:
+		- Casification
