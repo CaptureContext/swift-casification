@@ -7,6 +7,10 @@ extension Set where Element == Substring {
 
 extension String {
 	public enum Casification {
+		// Implementation note:
+		// Consider using TaskLocal for overriding standard acronyms
+		// instead of always using explicit paramter
+
 		/// Standard acronyms to be treated as a single symbol
 		public static let standardAcronyms: Set<Substring> = [
 			"uri", "Uri", "URI",
@@ -23,7 +27,6 @@ extension String {
 			"xml", "Xml", "XML",
 			"yaml", "Yaml", "YAML", // todo: add more extensions
 			"sf", "SF",
-			"ns", "NS",
 			"ui", "UI",
 			"ux", "UX",
 			"sk", "SK" // todo: add more system prefixes
