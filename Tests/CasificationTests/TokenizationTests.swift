@@ -57,6 +57,101 @@ struct TokenizationTests {
 	}
 
 	@Test
+	func tricky() async throws {
+		#expect("Midlane"._tokenize() == [
+			"Midlane".asToken(.word),
+		])
+
+		#expect("MIDlane"._tokenize() == [
+			"MIDlane".asToken(.word),
+		])
+
+		#expect("MIDLane"._tokenize() == [
+			"MIDLane".asToken(.word),
+		])
+
+		#expect("MIDLANE"._tokenize() == [
+			"MIDLANE".asToken(.word),
+		])
+
+		#expect("identity"._tokenize() == [
+			"identity".asToken(.word),
+		])
+
+		#expect("IDENTITY"._tokenize() == [
+			"IDENTITY".asToken(.word),
+		])
+
+		#expect("UUIDstring"._tokenize() == [
+			"UUID".asToken(.acronym),
+			"".asToken(.separator),
+			"string".asToken(.word),
+		])
+
+		#expect("UUIDString"._tokenize() == [
+			"UUID".asToken(.acronym),
+			"".asToken(.separator),
+			"String".asToken(.word),
+		])
+
+		#expect("UUIDSTRING"._tokenize() == [
+			"UUIDSTRING".asToken(.word),
+		])
+
+		#expect("uuidstring"._tokenize() == [
+			"uuidstring".asToken(.word)
+		])
+
+		#expect("uuidString"._tokenize() == [
+			"uuid".asToken(.acronym),
+			"".asToken(.separator),
+			"String".asToken(.word),
+		])
+
+		#expect("uuidSTRING"._tokenize() == [
+			"uuid".asToken(.acronym),
+			"".asToken(.separator),
+			"STRING".asToken(.word),
+		])
+
+		#expect("UUIDjson"._tokenize() == [
+			"UUID".asToken(.acronym),
+			"".asToken(.separator),
+			"json".asToken(.acronym),
+		])
+
+		#expect("UUIDJson"._tokenize() == [
+			"UUID".asToken(.acronym),
+			"".asToken(.separator),
+			"Json".asToken(.acronym),
+		])
+
+		#expect("UUIDJSON"._tokenize() == [
+			"UUID".asToken(.acronym),
+			"".asToken(.separator),
+			"JSON".asToken(.acronym),
+		])
+
+		#expect("uuidjson"._tokenize() == [
+			"uuid".asToken(.acronym),
+			"".asToken(.separator),
+			"json".asToken(.acronym),
+		])
+
+		#expect("uuidJson"._tokenize() == [
+			"uuid".asToken(.acronym),
+			"".asToken(.separator),
+			"Json".asToken(.acronym),
+		])
+
+		#expect("uuidJSON"._tokenize() == [
+			"uuid".asToken(.acronym),
+			"".asToken(.separator),
+			"JSON".asToken(.acronym),
+		])
+	}
+
+	@Test
 	func withAcronyms() async throws {
 		#expect("UUIDJSON"._tokenize() == [
 			"UUID".asToken(.acronym),
@@ -117,6 +212,40 @@ struct TokenizationTests {
 				"idfa".asToken(.acronym),
 				"".asToken(.separator),
 				"Uuid".asToken(.acronym),
+			]
+		)
+
+		#expect(
+			"AaaaAaaa"._tokenize() == [
+				"Aaaa".asToken(.word),
+				"".asToken(.separator),
+				"Aaaa".asToken(.word),
+			]
+		)
+
+		#expect("identity"._tokenize() == [
+			"identity".asToken(.word),
+		])
+
+		#expect(
+			"grid1x1"._tokenize() == [
+				"grid".asToken(.word),
+				"".asToken(.separator),
+				"1".asToken(.number),
+				"".asToken(.separator),
+				"x".asToken(.word),
+				"".asToken(.separator),
+				"1".asToken(.number),
+			]
+		)
+
+		#expect(
+			"lens1x"._tokenize() == [
+				"lens".asToken(.word),
+				"".asToken(.separator),
+				"1".asToken(.number),
+				"".asToken(.separator),
+				"x".asToken(.word),
 			]
 		)
 	}

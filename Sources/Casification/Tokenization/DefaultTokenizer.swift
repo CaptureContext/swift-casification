@@ -59,7 +59,7 @@ extension String.Casification.Tokenizers {
 				tokens.append(.init(value, kind: kind))
 			}
 
-			func findAcronym(at index: String.Index) -> Substring? {
+			func getAcronym(at index: String.Index) -> Substring? {
 				config.acronyms.first { acronym in
 					guard let end = input.index(index, offsetBy: acronym.count, limitedBy: input.endIndex)
 					else { return false }
@@ -87,7 +87,7 @@ extension String.Casification.Tokenizers {
 					}
 
 					// Recursively allow split if another acronym follows
-					return findAcronym(at: end) != nil
+					return getAcronym(at: end) != nil
 				}.map { acronym in
 					let end = input.index(index, offsetBy: acronym.count)
 					return input[index..<end]
@@ -96,14 +96,32 @@ extension String.Casification.Tokenizers {
 
 			while currentIndex < input.endIndex {
 				do { // match acronyms
-					if let acronym = findAcronym(at: currentIndex) {
-						commitToken(upTo: currentIndex)
+					if let acronym = getAcronym(at: currentIndex) {
+						var isSuffixOfOtherToken: Bool {
+							if currentStart == currentIndex { return false }
 
-						let end = input.index(currentIndex, offsetBy: acronym.count)
-						commitToken(input[currentIndex..<end], kind: .acronym)
-						currentIndex = end
-						currentStart = end
-						continue
+							let prevIdx = input.index(
+								before: currentIndex,
+								limitedBy: input.startIndex
+							)
+
+							guard let prevIdx else { return false }
+
+							let prevChar = input[prevIdx]
+							let currChar = input[currentIndex]
+
+							return prevChar.isUppercase || currChar.isLowercase
+						}
+
+						if !isSuffixOfOtherToken {
+							commitToken(upTo: currentIndex)
+
+							let end = input.index(currentIndex, offsetBy: acronym.count)
+							commitToken(input[currentIndex..<end], kind: .acronym)
+							currentIndex = end
+							currentStart = end
+							continue
+						}
 					}
 				}
 
@@ -156,4 +174,23 @@ extension String.Casification.Tokenizers {
 extension Character {
 	@usableFromInline
 	var isAlphanumeric: Bool { (isLetter || isNumber) }
+}
+
+extension StringProtocol {
+	@usableFromInline
+	var lastIndex: Index? {
+		count > 0 ? index(before: endIndex) : nil
+	}
+
+	@usableFromInline
+	func index(before other: Index, limitedBy limit: Index) -> Index? {
+		guard other > limit else { return nil }
+		return index(before: other)
+	}
+
+	@usableFromInline
+	func index(after other: Index, limitedBy limit: Index) -> Index? {
+		guard other < limit else { return nil }
+		return index(after: other)
+	}
 }

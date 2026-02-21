@@ -27,6 +27,7 @@ extension String {
 			"xml", "Xml", "XML",
 			"yaml", "Yaml", "YAML", // todo: add more extensions
 			"sf", "SF",
+			"ns", "NS",
 			"ui", "UI",
 			"ux", "UX",
 			"sk", "SK" // todo: add more system prefixes
@@ -41,7 +42,7 @@ extension String.Casification {
 		func tokenize(_ input: Substring) -> [Token]
 	}
 
-	public struct Token: Hashable {
+	public struct Token: Hashable, CustomStringConvertible {
 		public var value: Substring
 		public var kind: Kind
 
@@ -50,11 +51,24 @@ extension String.Casification {
 			self.kind = kind
 		}
 
-		public enum Kind: Hashable {
+		public enum Kind: Hashable, CustomStringConvertible {
 			case word
 			case number
 			case acronym
 			case separator
+
+			public var description: String {
+				switch self {
+				case .word: "word"
+				case .number: "number"
+				case .acronym: "acronym"
+				case .separator: "separator"
+				}
+			}
+		}
+
+		public var description: String {
+			return ".\(kind)(\"\(value)\")"
 		}
 	}
 }
