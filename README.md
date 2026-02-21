@@ -144,24 +144,24 @@ where Self == String.Casification.Modifier.ProcessingTokens<
 
 ### Basic
 
-You can add Casification to an Xcode project by adding it as a package dependency.
+You can add `swift-casification` to an Xcode project by adding it as a package dependency.
 
 1. From the **File** menu, select **Swift Packages › Add Package Dependency…**
-2. Enter [`"https://github.com/capturecontext/swift-casification.git"`](https://github.com/capturecontext/swift-casification.git) into the package repository URL text field
-3. Choose products you need to link them to your project.
+2. Enter [`"https://github.com/capturecontext/swift-casification"`](https://github.com/capturecontext/swift-casification) into the package repository URL text field
+3. Choose products you need to link to your project.
 
 ### Recommended
 
-If you use SwiftPM for your project, you can add Casification to your package file.
+If you use SwiftPM for your project structure, add `swift-casification` dependency to your package file
 
 ```swift
 .package(
   url: "https://github.com/capturecontext/swift-casification.git", 
-  .upToNextMinor(from: "0.1.0")
+  .upToNextMinor("0.1.2")
 )
 ```
 
-Do not forget about target dependencies:
+Do not forget about target dependencies
 
 ```swift
 .product(
