@@ -157,7 +157,7 @@ If you use SwiftPM for your project structure, add `swift-casification` dependen
 ```swift
 .package(
   url: "https://github.com/capturecontext/swift-casification.git", 
-  .upToNextMinor("0.1.2")
+  .upToNextMinor("0.2.0")
 )
 ```
 
