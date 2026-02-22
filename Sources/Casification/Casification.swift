@@ -51,6 +51,11 @@ extension String.Casification {
 			self.kind = kind
 		}
 
+		@inlinable
+		public func withValue(_ value: Substring) -> Token {
+			return .init(value, kind: kind)
+		}
+
 		public enum Kind: Hashable, CustomStringConvertible {
 			case word
 			case number

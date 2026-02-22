@@ -9,8 +9,8 @@ extension String.Casification.Modifiers {
 	>: String.Casification.Modifier {
 		public typealias MapSeparator = (
 			Substring,
-			Substring?,
-			Substring?
+			String.Casification.Token?,
+			ArraySlice<String.Casification.Token>
 		) -> Substring
 
 		@usableFromInline
@@ -74,8 +74,8 @@ where Self == String.Casification.Modifiers.AnyModifier {
 	>(
 		mapSeparator: @escaping (
 			Substring,
-			Substring?,
-			Substring?
+			String.Casification.Token?,
+			ArraySlice<String.Casification.Token>
 		) -> Substring,
 		firstModifier: FirstModifier,
 		restModifier: RestModifier,
@@ -100,8 +100,8 @@ where Self == String.Casification.Modifiers.AnyModifier {
 	>(
 		mapSeparator: @escaping (
 			Substring,
-			Substring?,
-			Substring?
+			String.Casification.Token?,
+			ArraySlice<String.Casification.Token>
 		) -> Substring,
 		tokenModifier: TokenModifier,
 		acronyms: Set<Substring> = String.Casification.standardAcronyms,

@@ -1,4 +1,5 @@
 import Foundation
+import IssueReporting
 
 extension String.Casification.Modifiers {
 	@available(*, deprecated, renamed: "CamelCaseConfig.Mode")
@@ -6,25 +7,73 @@ extension String.Casification.Modifiers {
 
 	public struct CamelCaseConfig {
 		public var mode: Mode
+		public var numbers: Numbers
 		public var acronyms: Acronyms
 
 		public init(
 			mode: Mode = .automatic,
+			numbers: Numbers = .default,
 			acronyms: Acronyms = .default
 		) {
 			self.mode = mode
+			self.numbers = numbers
 			self.acronyms = acronyms
 		}
 
 		@usableFromInline
 		func withMode(_ mode: Mode) -> Self {
-			.init(mode: mode, acronyms: acronyms)
+			.init(mode: mode, numbers: numbers, acronyms: acronyms)
 		}
 
 		public enum Mode {
 			case automatic
 			case camel
 			case pascal
+		}
+
+		public struct Numbers {
+			@inlinable
+			public static var `default`: Self { .init() }
+
+			public var nextTokenMode: NextTokenMode
+			public var separator: Substring
+			public var singleLetterBounaryOptions: SingleLetterBoundaryOptions
+
+			public init(
+				nextTokenMode: NextTokenMode = .inherit,
+				separator: Substring = "_",
+				singleLetterBounaryOptions: SingleLetterBoundaryOptions = [
+					.disableSeparators,
+					.disableNextTokenProcessing,
+				]
+			) {
+				self.nextTokenMode = nextTokenMode
+				self.separator = separator
+				self.singleLetterBounaryOptions = singleLetterBounaryOptions
+			}
+
+			public struct SingleLetterBoundaryOptions: OptionSet {
+				public var rawValue: UInt
+
+				public init(rawValue: UInt) {
+					self.rawValue = rawValue
+				}
+
+				public static var disableSeparators: Self { .init(rawValue: 1 << 1) }
+				public static var disableNextTokenProcessing: Self { .init(rawValue: 1 << 1) }
+			}
+
+			public enum NextTokenMode {
+				case inherit
+				case override(Mode = .automatic)
+
+				public var overridenValue: Mode? {
+					switch self {
+					case let .override(mode): mode
+					default: nil
+					}
+				}
+			}
 		}
 
 		public struct Acronyms {
@@ -104,6 +153,8 @@ extension String.Casification.Modifiers {
 	public struct Camel<
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>: String.Casification.Modifier {
+		public typealias SeparatorTokenProcessor = String.Casification.TokenProcessor
+
 		@usableFromInline
 		struct FirstTokenModifier: String.Casification.Modifier {
 			@usableFromInline
@@ -196,7 +247,7 @@ extension String.Casification.Modifiers {
 		internal let prefixPredicate: PrefixPredicate
 
 		@usableFromInline
-		internal let numericSeparator: Substring
+		internal let separatorTokenProcessor: SeparatorTokenProcessor
 
 		@available(*, deprecated, renamed: "init(config:prefixPredicate:numericPrefix:)")
 		public init(
@@ -223,33 +274,136 @@ extension String.Casification.Modifiers {
 			prefixPredicate: PrefixPredicate,
 			numericPrefix: Substring = "_"
 		) {
+			self.init(
+				config: config,
+				prefixPredicate: prefixPredicate,
+				separatorTokenProcessor: .inline { index, tokens in
+					guard let token = tokens[safe: index] else { return [] }
+
+					let numericSeparatorToken = String.Casification.Token(
+						config.numbers.separator,
+						kind: .separator
+					)
+
+					let prevToken = tokens[safe: index - 1]
+					let nextToken = tokens[safe: index + 1]
+
+					do { // verify input
+						let issuesLink = "https://github.com/capturecontext/swift-casification/issues"
+						let actionMessage = "Please sumbit an issue here \(issuesLink)"
+
+						if token.kind != .separator {
+							reportIssue(
+								"""
+								separatorTokenProcessor should only be applied to separators
+								\(actionMessage)
+								"""
+							)
+						} else if nextToken?.kind == .separator || nextToken?.kind == .separator {
+							reportIssue(
+								"""
+								Tokenization should not produce sequences of separators
+								\(actionMessage)
+								"""
+							)
+						}
+					}
+
+					let leadingNumericBoundary = prevToken?.value.last?.isNumber == true
+					if leadingNumericBoundary {
+						let removeSeparator = config.numbers.singleLetterBounaryOptions.contains(.disableSeparators)
+						&& nextToken?.isSingleLetter == true
+						return removeSeparator ? [] : [numericSeparatorToken]
+					}
+
+					let trailingNumericBoundary = nextToken?.value.first?.isNumber == true
+					if trailingNumericBoundary {
+						let removeSeparator = config.numbers.singleLetterBounaryOptions.contains(.disableSeparators)
+						&& prevToken?.isSingleLetter == true
+						return removeSeparator ? [] : [numericSeparatorToken]
+					}
+
+					return []
+				}
+			)
+		}
+
+		public init(
+			config: CamelCaseConfig = .init(),
+			prefixPredicate: PrefixPredicate,
+			separatorTokenProcessor: SeparatorTokenProcessor
+		) {
 			self.config = config
 			self.prefixPredicate = prefixPredicate
-			self.numericSeparator = numericPrefix
+			self.separatorTokenProcessor = separatorTokenProcessor
 		}
 
 		@inlinable
 		public func transform(_ input: Substring) -> Substring {
-			let tokenazableInput = input.first?.isNumber == true
-			? numericSeparator + input
-			: input
+			let detectedPascal = input.first(where: { $0.isLetter })?.isUppercase == true
+			let defaultFirstModifier = FirstTokenModifier(config: config)
+			let defaultRestModifier = RestTokensModifier(acronyms: config.acronyms)
 
-			return tokenazableInput.case(String.Casification.Modifiers.ProcessingTokens(
+			return input.case(String.Casification.Modifiers.ProcessingTokens(
 				using: String.Casification.TokensProcessors._ProgrammingCaseModifiers(
-					prefixPredicate: prefixPredicate,
-					mapSeparator: { separator, prev, next in
-						let isNumericBoundary = prev?.last?.isNumber == true
-						|| next?.first?.isNumber == true
+					tokenProcessor: .inline { index, tokens in
+						guard let token = tokens[safe: index] else { return [] }
 
-						return isNumericBoundary ? numericSeparator : ""
+						if token.kind == .separator {
+							return separatorTokenProcessor.processToken(at: index, in: tokens)
+						}
+
+						if token.kind == .number {
+							return [token]
+						}
+
+						let afterNumeric: Bool = tokens[safe: ..<index]
+							.reversed()
+							.first(where: { $0.kind != .separator })?.kind == .number
+
+						let alreadyCaughtNonNumeric: Bool = tokens[safe: ..<index]
+							.contains { [.word, .acronym].contains($0.kind) }
+
+						if afterNumeric {
+							if
+								config.numbers.singleLetterBounaryOptions.contains(.disableNextTokenProcessing),
+								token.value.count == 1,
+								token.value.first?.isLetter == true
+							{ return [token] }
+
+							switch config.modeAfterNumber {
+							case .automatic:
+								if detectedPascal {
+									return [token.withValue(defaultFirstModifier.withMode(.pascal).transform(token.value))]
+								} else {
+									return [token.withValue(defaultFirstModifier.withMode(.camel).transform(token.value))]
+								}
+
+							case .pascal:
+								return [token.withValue(defaultFirstModifier.withMode(.pascal).transform(token.value))]
+
+							case .camel:
+								return [token.withValue(defaultFirstModifier.withMode(.camel).transform(token.value))]
+							}
+						}
+
+						if alreadyCaughtNonNumeric {
+							return [
+								.init(
+									defaultRestModifier.transform(token.value),
+									kind: token.kind
+								),
+							]
+						} else {
+							return [
+								.init(
+									defaultFirstModifier.transform(token.value),
+									kind: token.kind
+								),
+							]
+						}
 					},
-					firstModifier: FirstTokenModifier(
-						config: config
-					),
-					restModifier: RestTokensModifier(
-						acronyms: config.acronyms
-					),
-					numericModifier: .empty
+					prefixPredicate: prefixPredicate,
 				),
 				acronyms: config.acronyms.reservedValues
 			))
@@ -270,62 +424,69 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 		.camel(.pascal)
 	}
 
-	@available(*, deprecated, renamed: "camel(_:acronyms:numericPrefix:)")
+	@available(*, deprecated, message: "Move numericPrefix value to numbers.separator.value argument")
 	@inlinable
 	public static func camel(
 		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		acronyms: Set<Substring> = String.Casification.standardAcronyms,
-		numericSeparator: Substring
+		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
+		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
+		numericPrefix: Substring
 	) -> Self {
-		return .camel(
-			mode,
-			acronyms: .init(reservedValues: acronyms),
-			numericPrefix: numericSeparator
-		)
+		var numbersConfig = numbers
+		numbersConfig.separator = numericPrefix
+		return camel(mode, numbers: numbersConfig, acronyms: acronyms)
 	}
 
 	@inlinable
 	public static func camel(
 		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
-		numericPrefix: Substring = "_"
+		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
+		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default
 	) -> Self {
 		return .init(
-			config: .init(mode: mode, acronyms: acronyms),
-			prefixPredicate: .swiftDeclarations,
-			numericPrefix: numericPrefix
+			config: .init(mode: mode, numbers: numbers, acronyms: acronyms),
+			prefixPredicate: .swiftDeclarations
 		)
 	}
 }
 
 extension String.Casification.Modifier where Self == String.Casification.Modifiers.AnyModifier {
-	@available(*, deprecated, renamed: "camel(_:acronyms:prefixPredicate:numericPrefix:)")
+	@available(*, deprecated, message: "Move numericPrefix value to numbers.separator.value argument")
 	@inlinable
 	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
 		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		acronyms: Set<Substring> = String.Casification.standardAcronyms,
+		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
+		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
 		prefixPredicate: PrefixPredicate,
-		numericSeparator: Substring
+		numericPrefix: Substring = "_"
 	) -> Self {
-		return .camel(
-			mode,
-			acronyms: .init(reservedValues: acronyms),
-			prefixPredicate: prefixPredicate,
-			numericPrefix: numericSeparator
-		)
+		var numbersConfig = numbers
+		numbersConfig.separator = numericPrefix
+		return camel(mode, numbers: numbersConfig, acronyms: acronyms, prefixPredicate: prefixPredicate)
 	}
 
 	@inlinable
 	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
 		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
+		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
 		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
 		prefixPredicate: PrefixPredicate,
-		numericPrefix: Substring = "_"
 	) -> Self {
 		return .init(String.Casification.Modifiers.Camel(
-			config: .init(mode: mode, acronyms: acronyms),
-			prefixPredicate: prefixPredicate,
-			numericPrefix: numericPrefix
+			config: .init(mode: mode, numbers: numbers, acronyms: acronyms),
+			prefixPredicate: prefixPredicate
 		))
+	}
+}
+
+extension String.Casification.Token {
+	@usableFromInline
+	var isSingleLetter: Bool { value.count == 1 && value.first?.isLetter == true }
+}
+
+extension String.Casification.Modifiers.CamelCaseConfig {
+	@usableFromInline
+	var modeAfterNumber: Mode {
+		numbers.nextTokenMode.overridenValue ?? mode
 	}
 }

@@ -55,3 +55,57 @@ extension Collection {
 		}
 	}
 }
+
+extension Collection where SubSequence: ExpressibleByArrayLiteral {
+	@usableFromInline
+	internal subscript(safe range: Range<Index>) -> SubSequence {
+		get {
+			guard
+				let first = indices.first(where: { $0 >= range.lowerBound }),
+				let last = indices.reversed().first(where: { $0 < range.upperBound })
+			else { return [] }
+			return self[first...last]
+		}
+	}
+
+	@usableFromInline
+	internal subscript(safe range: ClosedRange<Index>) -> SubSequence {
+		get {
+			guard
+				let first = indices.first(where: { $0 >= range.lowerBound }),
+				let last = indices.reversed().first(where: { $0 <= range.upperBound })
+			else { return [] }
+			return self[first...last]
+		}
+	}
+
+	@usableFromInline
+	internal subscript(safe range: PartialRangeFrom<Index>) -> SubSequence {
+		get {
+			guard
+				let first = indices.first(where: { $0 >= range.lowerBound })
+			else { return [] }
+			return self[first...]
+		}
+	}
+
+	@usableFromInline
+	internal subscript(safe range: PartialRangeUpTo<Index>) -> SubSequence {
+		get {
+			guard
+				let last = indices.reversed().first(where: { $0 < range.upperBound })
+			else { return [] }
+			return self[...last]
+		}
+	}
+
+	@usableFromInline
+	internal subscript(safe range: PartialRangeThrough<Index>) -> SubSequence {
+		get {
+			guard
+				let last = indices.reversed().first(where: { $0 <= range.upperBound })
+			else { return [] }
+			return self[...last]
+		}
+	}
+}

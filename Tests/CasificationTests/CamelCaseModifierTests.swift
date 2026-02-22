@@ -20,13 +20,21 @@ struct CamelCaseModifierTests {
 		#expect("infix-id-acronym".case(.camel()) == "infixIDAcronym")
 		#expect("WordWithAcronym_Identifier".case(.camel()) == "WordWithAcronymIdentifier")
 		#expect("UUIDIdentifier-combinedAcronyms".case(.camel()) == "UUIDIdentifierCombinedAcronyms")
-		#expect("1numbered".case(.camel()) == "_1_numbered")
-		#expect("1Numbered".case(.camel()) == "_1_Numbered")
+		#expect("1numbered".case(.camel()) == "1_numbered")
+		#expect("1Numbered".case(.camel()) == "1_Numbered")
 		#expect("_unknown.symbols<>_found".case(.camel()) == "_unknownSymbolsFound")
 		#expect(
 			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid".case(.camel())
-			== "__idUUIDIdentifierSomeRandomStringOfCases_1_23_IDFAUUID"
+			== "__idUUIDIdentifierSomeRandomStringOfCases_1_23_idfaUUID"
 		)
+
+		do { // numbers
+			#expect("numbers_1.23.in-a-sentence".case(.camel()) == "numbers_1_23_inASentence")
+			#expect("Numbers_1.23.in-a-Sentence".case(.camel()) == "Numbers_1_23_InASentence")
+			#expect("grid1x1".case(.camel()) == "grid_1x1")
+			#expect("Grid1x1".case(.camel()) == "Grid_1x1")
+			#expect("lens1x".case(.camel()) == "lens_1x")
+		}
 	}
 
 	@Test
@@ -46,13 +54,19 @@ struct CamelCaseModifierTests {
 		#expect("infix-id-acronym".case(.camel) == "infixIDAcronym")
 		#expect("WordWithAcronym_Identifier".case(.camel) == "wordWithAcronymIdentifier")
 		#expect("UUIDIdentifier-combinedAcronyms".case(.camel) == "uuidIdentifierCombinedAcronyms")
-		#expect("1numbered".case(.camel) == "_1_numbered")
-		#expect("1Numbered".case(.camel) == "_1_numbered")
+		#expect("1numbered".case(.camel) == "1_numbered")
+		#expect("1Numbered".case(.camel) == "1_numbered")
 		#expect("_unknown.symbols<>_found".case(.camel) == "_unknownSymbolsFound")
 		#expect(
 			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid".case(.camel)
-			== "__idUUIDIdentifierSomeRandomStringOfCases_1_23_IDFAUUID"
+			== "__idUUIDIdentifierSomeRandomStringOfCases_1_23_idfaUUID"
 		)
+
+		do { // numbers
+			#expect("numbers_1.23.in-a-sentence".case(.camel) == "numbers_1_23_inASentence")
+			#expect("grid1x1".case(.camel) == "grid_1x1")
+			#expect("lens1x".case(.camel) == "lens_1x")
+		}
 	}
 
 	@Test
@@ -72,8 +86,8 @@ struct CamelCaseModifierTests {
 		#expect("infix-id-acronym".case(.pascal) == "InfixIDAcronym")
 		#expect("WordWithAcronym_Identifier".case(.pascal) == "WordWithAcronymIdentifier")
 		#expect("UUIDIdentifier-combinedAcronyms".case(.pascal) == "UUIDIdentifierCombinedAcronyms")
-		#expect("1numbered".case(.pascal) == "_1_Numbered")
-		#expect("1Numbered".case(.pascal) == "_1_Numbered")
+		#expect("1numbered".case(.pascal) == "1_Numbered")
+		#expect("1Numbered".case(.pascal) == "1_Numbered")
 		#expect("_unknown.symbols<>_found".case(.pascal) == "_UnknownSymbolsFound")
 		#expect(
 			"__iduuidIdentifierSome_random-stringOf.Cases.1.23.idfaUuid".case(.pascal)

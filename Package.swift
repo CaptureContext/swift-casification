@@ -17,9 +17,21 @@ let package = Package(
 			targets: ["Casification"]
 		),
 	],
+	dependencies: [
+		.package(
+			url: "https://github.com/pointfreeco/xctest-dynamic-overlay.git",
+			.upToNextMajor(from: "1.9.0")
+		)
+	],
 	targets: [
 		.target(
-			name: "Casification"
+			name: "Casification",
+			dependencies: [
+				.product(
+					name: "IssueReporting",
+					package: "xctest-dynamic-overlay"
+				)
+			]
 		),
 		.testTarget(
 			name: "CasificationTests",

@@ -1,3 +1,5 @@
+import Foundation
+
 extension String.Casification {
 	public enum PrefixPredicates {}
 	public protocol PrefixPredicate {
@@ -6,57 +8,38 @@ extension String.Casification {
 	}
 }
 
+
 extension String.Casification.TokensProcessors {
 	public struct _ProgrammingCaseModifiers<
-		FirstModifier: String.Casification.Modifier,
-		RestModifier: String.Casification.Modifier,
-		NumericModifier: String.Casification.Modifier,
+		TokenProcessor: String.Casification.TokenProcessor,
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>: String.Casification.TokensProcessor {
-		public typealias MapSeparator = (
-			Substring,
-			Substring?,
-			Substring?
-		) -> Substring
+		@usableFromInline
+		internal let tokenProcessor: TokenProcessor
 
 		@usableFromInline
 		internal let prefixPredicate: PrefixPredicate
 
-		@usableFromInline
-		internal let mapSeparator: MapSeparator
-
-		@usableFromInline
-		internal let firstModifier: FirstModifier
-
-		@usableFromInline
-		internal let restModifier: RestModifier
-
-		@usableFromInline
-		internal let numericModifier: NumericModifier
-
 		public init(
-			prefixPredicate: PrefixPredicate,
-			mapSeparator: @escaping MapSeparator,
-			firstModifier: FirstModifier,
-			restModifier: RestModifier,
-			numericModifier: NumericModifier
+			tokenProcessor: TokenProcessor,
+			prefixPredicate: PrefixPredicate
 		) {
+			self.tokenProcessor = tokenProcessor
 			self.prefixPredicate = prefixPredicate
-			self.mapSeparator = mapSeparator
-			self.firstModifier = firstModifier
-			self.restModifier = restModifier
-			self.numericModifier = numericModifier
 		}
 
+		@inlinable
 		public func processTokens(
 			_ tokens: ArraySlice<String.Casification.Token>
 		) -> ArraySlice<String.Casification.Token> {
-			guard let firstNonSeparatorIndex = tokens.firstIndex(where: { $0.kind != .separator })
+			guard
+				let firstNonSeparatorIndex = tokens.firstIndex(where: { $0.kind != .separator }),
+				let lastNonSeparatorIndex = tokens.lastIndex(where: { $0.kind != .separator })
 			else { return tokens }
 
 			var output: [String.Casification.Token] = []
 
-			do {
+			do { // collect leading separators
 				let collectedPrefix = tokens[..<firstNonSeparatorIndex].reduce("") { buffer, token in
 					buffer.appending(token.value.filter(prefixPredicate.isCharacterAllowed))
 				}[...]
@@ -66,44 +49,12 @@ extension String.Casification.TokensProcessors {
 				}
 			}
 
-			do {
-				var restOfTokens = tokens[firstNonSeparatorIndex...]
-				while restOfTokens.last?.kind == .separator { restOfTokens.removeLast() }
 
-				// used to detect first non-numeric token
-				var caughtNonNumeric = false
+			do { // process tokens
+				let tokens = tokens[firstNonSeparatorIndex...lastNonSeparatorIndex]
 
-				for (token, index) in zip(restOfTokens, restOfTokens.indices) {
-					guard token.kind != .separator else {
-						output.append(.init(
-							mapSeparator(
-								token.value,
-								restOfTokens[safe: index - 1]?.value,
-								restOfTokens[safe: index + 1]?.value
-							),
-							kind: .separator
-						))
-						continue
-					}
-
-					if caughtNonNumeric {
-						output.append(.init(
-							restModifier.transform(token.value),
-							kind: token.kind
-						))
-					} else {
-						if token.kind == .number {
-							output.append(.init(
-								numericModifier.transform(token.value),
-								kind: token.kind
-							))
-						} else {
-							caughtNonNumeric = true
-							output.append(reduce(token) {
-								$0.value = firstModifier.transform($0.value)
-							})
-						}
-					}
+				for index in tokens.indices {
+					output.append(contentsOf: tokenProcessor.processToken(at: index, in: tokens))
 				}
 			}
 
@@ -111,6 +62,127 @@ extension String.Casification.TokensProcessors {
 		}
 	}
 }
+
+extension String.Casification.TokensProcessors._ProgrammingCaseModifiers
+where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
+	public typealias MapSeparator = (
+		Substring,
+		String.Casification.Token?,
+		ArraySlice<String.Casification.Token>,
+	) -> Substring
+
+	public init<
+		FirstModifier: String.Casification.Modifier,
+		RestModifier: String.Casification.Modifier,
+		NumericModifier: String.Casification.Modifier,
+	>(
+		prefixPredicate: PrefixPredicate,
+		mapSeparator: @escaping MapSeparator,
+		firstModifier: FirstModifier,
+		restModifier: RestModifier,
+		numericModifier: NumericModifier,
+		forceFirstModifierAfterNumeric: Bool = false,
+		forceDisableModifierForSingleLetterAfterNumeric: Bool = false
+	) {
+		self.init(
+			prefixPredicate: prefixPredicate,
+			separatorTokenProcessor: .inline { index, tokens in
+				guard let token = tokens[safe: index] else { return [] }
+				return [
+					.init(
+						mapSeparator(
+						token.value,
+						tokens[safe: index - 1],
+						tokens[safe: (index + 1)...]
+					),
+						kind: token.kind
+					)
+				]
+			},
+			firstModifier: firstModifier,
+			restModifier: restModifier,
+			numericModifier: numericModifier,
+			forceFirstModifierAfterNumeric: forceFirstModifierAfterNumeric,
+			forceDisableModifierForSingleLetterAfterNumeric: forceDisableModifierForSingleLetterAfterNumeric
+		)
+	}
+
+	public init<
+		FirstModifier: String.Casification.Modifier,
+		RestModifier: String.Casification.Modifier,
+		NumericModifier: String.Casification.Modifier,
+		SeparatorTokenProcessor: String.Casification.TokenProcessor
+	>(
+		prefixPredicate: PrefixPredicate,
+		separatorTokenProcessor: SeparatorTokenProcessor,
+		firstModifier: FirstModifier,
+		restModifier: RestModifier,
+		numericModifier: NumericModifier,
+		forceFirstModifierAfterNumeric: Bool = false,
+		forceDisableModifierForSingleLetterAfterNumeric: Bool = false
+	) {
+		self.init(
+			tokenProcessor: .init { index, tokens in
+				guard let token = tokens[safe: index] else { return [] }
+
+				if token.kind == .separator {
+					return separatorTokenProcessor.processToken(at: index, in: tokens)
+				}
+
+				if token.kind == .number {
+					return [
+						.init(
+							numericModifier.transform(token.value),
+							kind: token.kind
+						),
+					]
+				}
+
+				let afterNumeric: Bool = tokens[safe: ..<index]
+					.reversed()
+					.first(where: { $0.kind != .separator })?.kind == .number
+
+				if afterNumeric {
+					if
+						forceDisableModifierForSingleLetterAfterNumeric,
+						token.value.count == 1,
+						token.value.first?.isLetter == true
+					{ return [token] }
+
+					if forceFirstModifierAfterNumeric {
+						return [
+							.init(
+								firstModifier.transform(token.value),
+								kind: token.kind
+							),
+						]
+					}
+				}
+
+				let alreadyCaughtNonNumeric: Bool = tokens[safe: ..<index]
+					.contains { [.word, .acronym].contains($0.kind) }
+
+				if alreadyCaughtNonNumeric {
+					return [
+						.init(
+							restModifier.transform(token.value),
+							kind: token.kind
+						),
+					]
+				} else {
+					return [
+						.init(
+							firstModifier.transform(token.value),
+							kind: token.kind
+						),
+					]
+				}
+			},
+			prefixPredicate: prefixPredicate
+		)
+	}
+}
+
 
 // - MARK: PrefixPredicates
 
