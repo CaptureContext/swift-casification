@@ -71,7 +71,7 @@ extension String.Casification {
 					self.rawValue = rawValue
 				}
 
-				public static var disableSeparators: Self { .init(rawValue: 1 << 1) }
+				public static var disableSeparators: Self { .init(rawValue: 1 << 0) }
 				public static var disableNextTokenProcessing: Self { .init(rawValue: 1 << 1) }
 			}
 
