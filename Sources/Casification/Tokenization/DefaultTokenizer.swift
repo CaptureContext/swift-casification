@@ -3,44 +3,17 @@ import Foundation
 extension String.Casification.Tokenizer
 where Self == String.Casification.Tokenizers.Default {
 	@inlinable
-	public static func `default`(
-		config: Self.Config = .init()
-	) -> Self {
-		.init(config: config)
-	}
+	public static func `default`() -> Self { .init() }
 }
 
 extension String.Casification.Tokenizers {
 	public struct Default: String.Casification.Tokenizer {
-		public struct Config {
-			public var acronyms: [Substring] = []
-
-			@inlinable
-			public init(
-				acronyms: Set<Substring> = String.Casification.standardAcronyms
-			) {
-				self.init(
-					sortedAcronyms: acronyms.sorted(by: { $0.count > $1.count })
-				)
-			}
-
-			public init(
-				sortedAcronyms: [Substring]
-			) {
-				self.acronyms = sortedAcronyms
-			}
-		}
-
-		public var config: Config
-
-		public init(config: Config = .init(
-			acronyms: String.Casification.standardAcronyms
-		)) {
-			self.config = config
-		}
+		public init() {}
 
 		@inlinable
 		public func tokenize(_ input: Substring) -> [String.Casification.Token] {
+			let acronyms = Set.standardAcronyms.sorted(by: { $0.count > $1.count })
+
 			var tokens: [String.Casification.Token] = []
 			var currentStart = input.startIndex
 			var currentIndex = input.startIndex
@@ -60,7 +33,7 @@ extension String.Casification.Tokenizers {
 			}
 
 			func getAcronym(at index: String.Index) -> Substring? {
-				config.acronyms.first { acronym in
+				acronyms.first { acronym in
 					guard let end = input.index(index, offsetBy: acronym.count, limitedBy: input.endIndex)
 					else { return false }
 

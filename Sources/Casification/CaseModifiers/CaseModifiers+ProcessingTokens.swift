@@ -7,21 +7,16 @@ extension String.Casification.Modifiers {
 		@usableFromInline
 		internal var processor: Processor
 
-		@usableFromInline
-		internal var reservedAcronyms: Set<Substring>
-
 		public init(
-			using processor: Processor,
-			acronyms: Set<Substring> = String.Casification.standardAcronyms
+			using processor: Processor
 		) {
 			self.processor = processor
-			self.reservedAcronyms = Set(acronyms.map { $0[...] })
 		}
 
 		@inlinable
 		public func transform(_ input: Substring) -> Substring {
 			let tokens = input.tokenize(
-				using: .default(config: .init(acronyms: reservedAcronyms))
+				using: .default()
 			)
 
 			return processor.processTokens(tokens[...]).reduce("") { buffer, token in
@@ -35,12 +30,10 @@ extension String.Casification.Modifier
 where Self == String.Casification.Modifiers.AnyModifier {
 	@inlinable
 	public static func processingTokens<Processor: String.Casification.TokensProcessor>(
-		with processor: Processor,
-		acronyms: Set<Substring> = String.Casification.standardAcronyms
+		with processor: Processor
 	) -> Self {
 		.init(String.Casification.Modifiers.ProcessingTokens(
-			using: processor,
-			acronyms: acronyms
+			using: processor
 		))
 	}
 }

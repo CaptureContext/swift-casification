@@ -77,6 +77,15 @@ extension String.Casification.Modifiers {
 			@inlinable
 			public static var `default`: Self { .init() }
 
+			@usableFromInline
+			var processingPolicy: ProcessingPolicy
+
+			public init(
+				processingPolicy: ProcessingPolicy = .default
+			) {
+				self.processingPolicy = processingPolicy
+			}
+
 			public enum ProcessingPolicy {
 				public static var `default`: Self { .alwaysMatchCase }
 
@@ -130,20 +139,6 @@ extension String.Casification.Modifiers {
 				/// - `"id"` → `"Id"`, or `"id"/"ID"` if first token
 				case conditionalCapitalization
 			}
-
-			@usableFromInline
-			var reservedValues: Set<Substring> = .standardAcronyms
-
-			@usableFromInline
-			var processingPolicy: ProcessingPolicy
-
-			public init(
-				reservedValues: Set<Substring> = .standardAcronyms,
-				processingPolicy: ProcessingPolicy = .default
-			) {
-				self.reservedValues = reservedValues
-				self.processingPolicy = processingPolicy
-			}
 		}
 	}
 
@@ -181,7 +176,7 @@ extension String.Casification.Modifiers {
 					: input.case(withMode(.pascal))
 
 				case .pascal:
-					guard config.acronyms.reservedValues.contains(input)
+					guard Set.standardAcronyms.contains(input)
 					else { return input.case(.lower.combined(with: .upperFirst)) }
 
 					switch config.acronyms.processingPolicy {
@@ -194,7 +189,7 @@ extension String.Casification.Modifiers {
 					}
 
 				case .camel:
-					guard config.acronyms.reservedValues.contains(input)
+					guard Set.standardAcronyms.contains(input)
 					else { return input.case(.lower) }
 
 					switch config.acronyms.processingPolicy {
@@ -223,7 +218,7 @@ extension String.Casification.Modifiers {
 
 			@usableFromInline
 			func transform(_ input: Substring) -> Substring {
-				guard acronyms.reservedValues.contains(input)
+				guard Set.standardAcronyms.contains(input)
 				else { return input.case(.lower.combined(with: .upperFirst)) }
 
 				switch acronyms.processingPolicy {
@@ -305,7 +300,8 @@ extension String.Casification.Modifiers {
 			)
 		}
 
-		public init(
+		@usableFromInline
+		internal init(
 			config: CamelCaseConfig = .init(),
 			prefixPredicate: PrefixPredicate,
 			separatorTokenProcessor: SeparatorTokenProcessor
@@ -381,8 +377,7 @@ extension String.Casification.Modifiers {
 						}
 					},
 					prefixPredicate: prefixPredicate,
-				),
-				acronyms: config.acronyms.reservedValues
+				)
 			))
 		}
 	}
