@@ -1,18 +1,21 @@
 import Foundation
+import ConcurrencyExtras
 
 extension Set where Element == Substring {
-	@inlinable
-	public static var standardAcronyms: Self { String.Casification.standardAcronyms }
+	public static var standardAcronyms: Self { String.Casification.acronyms.value }
 }
 
 extension String {
 	public enum Casification {
-		// Implementation note:
-		// Consider using TaskLocal for overriding standard acronyms
-		// instead of always using explicit paramter
+		@TaskLocal
+		@_spi(Internals)
+		public static var acronyms: LockIsolated<Set<Substring>> = _defaultAcronyms
 
-		/// Standard acronyms to be treated as a single symbol
-		public static let standardAcronyms: Set<Substring> = [
+		@_spi(Internals)
+		public static let _defaultAcronyms: LockIsolated<Set<Substring>> = .init(_standardAcronyms)
+
+		@_spi(Internals)
+		public static let _standardAcronyms: Set<Substring> = [
 			"uri", "Uri", "URI",
 			"url", "Url", "URL",
 			"spm", "Spm", "SPM",
