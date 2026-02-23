@@ -2,9 +2,6 @@ import Foundation
 import IssueReporting
 
 extension String.Casification.Modifiers {
-	@available(*, deprecated, renamed: "CamelCaseConfig.Mode")
-	public typealias CamelCasePolicy = CamelCaseConfig.Mode
-
 	public struct CamelCaseConfig {
 		public var mode: Mode
 		public var numbers: Numbers
@@ -249,30 +246,10 @@ extension String.Casification.Modifiers {
 		@usableFromInline
 		internal let separatorTokenProcessor: SeparatorTokenProcessor
 
-		@available(*, deprecated, renamed: "init(config:prefixPredicate:numericPrefix:)")
-		public init(
-			capitalizationPolicy: CamelCaseConfig.Mode = .automatic,
-			acronyms: Set<Substring>,
-			prefixPredicate: PrefixPredicate,
-			numericSeparator: Substring
-		) {
-			self.init(
-				config: .init(
-					mode: capitalizationPolicy,
-					acronyms: .init(
-						reservedValues: acronyms,
-						processingPolicy: .default
-					)
-				),
-				prefixPredicate: prefixPredicate,
-				numericPrefix: numericSeparator
-			)
-		}
-
+		@inlinable
 		public init(
 			config: CamelCaseConfig = .init(),
-			prefixPredicate: PrefixPredicate,
-			numericPrefix: Substring = "_"
+			prefixPredicate: PrefixPredicate
 		) {
 			self.init(
 				config: config,
@@ -424,19 +401,6 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 		.camel(.pascal)
 	}
 
-	@available(*, deprecated, message: "Move numericPrefix value to numbers.separator.value argument")
-	@inlinable
-	public static func camel(
-		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
-		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
-		numericPrefix: Substring
-	) -> Self {
-		var numbersConfig = numbers
-		numbersConfig.separator = numericPrefix
-		return camel(mode, numbers: numbersConfig, acronyms: acronyms)
-	}
-
 	@inlinable
 	public static func camel(
 		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
@@ -451,20 +415,6 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 }
 
 extension String.Casification.Modifier where Self == String.Casification.Modifiers.AnyModifier {
-	@available(*, deprecated, message: "Move numericPrefix value to numbers.separator.value argument")
-	@inlinable
-	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
-		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
-		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
-		prefixPredicate: PrefixPredicate,
-		numericPrefix: Substring = "_"
-	) -> Self {
-		var numbersConfig = numbers
-		numbersConfig.separator = numericPrefix
-		return camel(mode, numbers: numbersConfig, acronyms: acronyms, prefixPredicate: prefixPredicate)
-	}
-
 	@inlinable
 	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
 		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
