@@ -5,14 +5,34 @@ import Foundation
 extension String.Casification.Modifiers {
 	public struct AnyModifier: String.Casification.Modifier {
 		@usableFromInline
-		internal let _transform: (Substring) -> Substring
+		internal let underlying: any String.Casification.Modifier
 
 		@inlinable
 		public init<Modifier: String.Casification.Modifier>(
 			_ modifier: Modifier
 		) {
-			self.init(modifier.transform)
+			self.underlying = modifier
 		}
+
+		public init(
+			_ transform: @escaping (Substring) -> Substring
+		) {
+			self.init(.inline(transform))
+		}
+
+		@inlinable
+		public func transform(_ input: Substring) -> Substring {
+			underlying.transform(input)
+		}
+	}
+}
+
+// MARK: Inline
+
+extension String.Casification.Modifiers {
+	public struct Inline: String.Casification.Modifier {
+		@usableFromInline
+		internal let _transform: (Substring) -> Substring
 
 		public init(
 			_ transform: @escaping (Substring) -> Substring
@@ -24,6 +44,15 @@ extension String.Casification.Modifiers {
 		public func transform(_ input: Substring) -> Substring {
 			_transform(input)
 		}
+	}
+}
+
+extension String.Casification.Modifier
+where Self == String.Casification.Modifiers.Inline {
+	public static func inline(
+		_ transform: @escaping (Substring) -> Substring
+	) -> Self {
+		return .init(transform)
 	}
 }
 

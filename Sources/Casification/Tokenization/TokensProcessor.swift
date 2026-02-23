@@ -12,13 +12,33 @@ extension String.Casification {
 extension String.Casification.TokensProcessors {
 	public struct AnyTokensProcessor: String.Casification.TokensProcessor {
 		@usableFromInline
-		internal let process: (ArraySlice<String.Casification.Token>) -> ArraySlice<String.Casification.Token>
+		internal let underlying: any String.Casification.TokensProcessor
 
 		public init<Processor: String.Casification.TokensProcessor>(
 			_ processor: Processor
 		) {
-			self.init(processor.processTokens)
+			self.underlying = processor
 		}
+
+		public init(_ process: @escaping (ArraySlice<String.Casification.Token>) -> ArraySlice<String.Casification.Token>) {
+			self.init(.inline(process))
+		}
+
+		@inlinable
+		public func processTokens(
+			_ tokens: ArraySlice<String.Casification.Token>
+		) -> ArraySlice<String.Casification.Token> {
+			underlying.processTokens(tokens)
+		}
+	}
+}
+
+// MARK: - Inline
+
+extension String.Casification.TokensProcessors {
+	public struct Inline: String.Casification.TokensProcessor {
+		@usableFromInline
+		internal let process: (ArraySlice<String.Casification.Token>) -> ArraySlice<String.Casification.Token>
 
 		public init(_ process: @escaping (ArraySlice<String.Casification.Token>) -> ArraySlice<String.Casification.Token>) {
 			self.process = process
@@ -30,6 +50,18 @@ extension String.Casification.TokensProcessors {
 		) -> ArraySlice<String.Casification.Token> {
 			process(tokens)
 		}
+	}
+}
+
+extension String.Casification.TokensProcessor
+where Self == String.Casification.TokensProcessors.Inline {
+	@inlinable
+	public static func inline(
+		_ process: @escaping (
+			ArraySlice<String.Casification.Token>
+		) -> ArraySlice<String.Casification.Token>
+	) -> Self {
+		return .init(process)
 	}
 }
 

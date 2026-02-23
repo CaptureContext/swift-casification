@@ -5,19 +5,9 @@ extension String.Casification.Modifiers {
 		FirstModifier: String.Casification.Modifier,
 		RestModifier: String.Casification.Modifier,
 		NumericModifier: String.Casification.Modifier,
+		SeparatorProcessor: String.Casification.TokenProcessor,
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>: String.Casification.Modifier {
-		public typealias MapSeparator = (
-			Substring,
-			String.Casification.Token?,
-			ArraySlice<String.Casification.Token>
-		) -> Substring
-
-		@usableFromInline
-		internal let prefixPredicate: PrefixPredicate
-
-		@usableFromInline
-		internal let mapSeparator: MapSeparator
 
 		@usableFromInline
 		internal let firstModifier: FirstModifier
@@ -28,18 +18,24 @@ extension String.Casification.Modifiers {
 		@usableFromInline
 		internal let numericModifier: NumericModifier
 
+		@usableFromInline
+		internal let prefixPredicate: PrefixPredicate
+
+		@usableFromInline
+		internal let separatorProcessor: SeparatorProcessor
+
 		public init(
-			prefixPredicate: PrefixPredicate,
-			mapSeparator: @escaping MapSeparator,
 			firstModifier: FirstModifier,
 			restModifier: RestModifier,
-			numericModifier: NumericModifier
+			numericModifier: NumericModifier,
+			separatorProcessor: SeparatorProcessor,
+			prefixPredicate: PrefixPredicate
 		) {
-			self.prefixPredicate = prefixPredicate
-			self.mapSeparator = mapSeparator
 			self.firstModifier = firstModifier
 			self.restModifier = restModifier
+			self.separatorProcessor = separatorProcessor
 			self.numericModifier = numericModifier
+			self.prefixPredicate = prefixPredicate
 		}
 
 		@inlinable
@@ -47,7 +43,7 @@ extension String.Casification.Modifiers {
 			input.case(String.Casification.Modifiers.ProcessingTokens(
 				using: String.Casification.TokensProcessors._ProgrammingCaseModifiers(
 					prefixPredicate: prefixPredicate,
-					mapSeparator: mapSeparator,
+					separatorProcessor: separatorProcessor,
 					firstModifier: firstModifier,
 					restModifier: restModifier,
 					numericModifier: numericModifier
@@ -64,46 +60,40 @@ where Self == String.Casification.Modifiers.AnyModifier {
 		FirstModifier: String.Casification.Modifier,
 		RestModifier: String.Casification.Modifier,
 		NumericModifier: String.Casification.Modifier,
+		SeparatorProcessor: String.Casification.TokenProcessor,
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>(
-		mapSeparator: @escaping (
-			Substring,
-			String.Casification.Token?,
-			ArraySlice<String.Casification.Token>
-		) -> Substring,
 		firstModifier: FirstModifier,
 		restModifier: RestModifier,
 		numericModifier: NumericModifier,
+		separatorProcessor: SeparatorProcessor,
 		prefixPredicate: PrefixPredicate
 	) -> Self {
 		return .init(String.Casification.Modifiers._ProcessingTokensWithProgrammingCaseModifiers(
-			prefixPredicate: prefixPredicate,
-			mapSeparator: mapSeparator,
 			firstModifier: firstModifier,
 			restModifier: restModifier,
-			numericModifier: numericModifier
+			numericModifier: numericModifier,
+			separatorProcessor: separatorProcessor,
+			prefixPredicate: prefixPredicate
 		))
 	}
 
 	@inlinable
 	public static func _programmingCaseModifiers<
 		TokenModifier: String.Casification.Modifier,
+		SeparatorProcessor: String.Casification.TokenProcessor,
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>(
-		mapSeparator: @escaping (
-			Substring,
-			String.Casification.Token?,
-			ArraySlice<String.Casification.Token>
-		) -> Substring,
 		tokenModifier: TokenModifier,
+		separatorProcessor: SeparatorProcessor,
 		prefixPredicate: PrefixPredicate
 	) -> Self {
 		return .init(String.Casification.Modifiers._ProcessingTokensWithProgrammingCaseModifiers(
-			prefixPredicate: prefixPredicate,
-			mapSeparator: mapSeparator,
 			firstModifier: tokenModifier,
 			restModifier: tokenModifier,
-			numericModifier: tokenModifier
+			numericModifier: tokenModifier,
+			separatorProcessor: separatorProcessor,
+			prefixPredicate: prefixPredicate
 		))
 	}
 
@@ -133,8 +123,10 @@ where Self == String.Casification.Modifiers.AnyModifier {
 		prefixPredicate: PrefixPredicate
 	) -> Self {
 		return ._programmingCaseModifiers(
-			mapSeparator: { _, _, _ in "_" },
 			tokenModifier: tokenModifier,
+			separatorProcessor: .inline { index, tokens in
+				return .init([.init("_", kind: .separator)])
+			},
 			prefixPredicate: prefixPredicate
 		)
 	}
@@ -165,8 +157,10 @@ where Self == String.Casification.Modifiers.AnyModifier {
 		prefixPredicate: PrefixPredicate
 	) -> Self {
 		return ._programmingCaseModifiers(
-			mapSeparator: { _, _, _ in "-" },
 			tokenModifier: tokenModifier,
+			separatorProcessor: .inline { index, tokens in
+				return .init([.init("-", kind: .separator)])
+			},
 			prefixPredicate: prefixPredicate
 		)
 	}
@@ -197,8 +191,10 @@ where Self == String.Casification.Modifiers.AnyModifier {
 		prefixPredicate: PrefixPredicate
 	) -> Self {
 		return ._programmingCaseModifiers(
-			mapSeparator: { _, _, _ in "." },
 			tokenModifier: tokenModifier,
+			separatorProcessor: .inline { index, tokens in
+				return .init([.init(".", kind: .separator)])
+			},
 			prefixPredicate: prefixPredicate
 		)
 	}

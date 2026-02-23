@@ -67,13 +67,13 @@ extension String.Casification.TokenProcessors {
 extension String.Casification.TokenProcessor
 where Self == String.Casification.TokenProcessors.InlineTokenProcessor {
 	public static func inline(
-		 _ process: @escaping (
-			 Int,
-			 ArraySlice<String.Casification.Token>
-		 ) -> ArraySlice<String.Casification.Token>
-	 ) -> Self {
-		 return .init(process)
-	 }
+		_ process: @escaping (
+			Int,
+			ArraySlice<String.Casification.Token>
+		) -> ArraySlice<String.Casification.Token>
+	) -> Self {
+		return .init(process)
+	}
 }
 
 // MARK: - Empty

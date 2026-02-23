@@ -29,7 +29,9 @@ extension String.Casification.Modifiers {
 extension String.Casification.Modifier
 where Self == String.Casification.Modifiers.AnyModifier {
 	@inlinable
-	public static func processingTokens<Processor: String.Casification.TokensProcessor>(
+	public static func processingTokens<
+		Processor: String.Casification.TokensProcessor
+	>(
 		with processor: Processor
 	) -> Self {
 		.init(String.Casification.Modifiers.ProcessingTokens(

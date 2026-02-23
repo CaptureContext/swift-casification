@@ -65,68 +65,24 @@ extension String.Casification.TokensProcessors {
 
 extension String.Casification.TokensProcessors._ProgrammingCaseModifiers
 where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
-	public typealias MapSeparator = (
-		Substring,
-		String.Casification.Token?,
-		ArraySlice<String.Casification.Token>,
-	) -> Substring
-
 	public init<
 		FirstModifier: String.Casification.Modifier,
 		RestModifier: String.Casification.Modifier,
 		NumericModifier: String.Casification.Modifier,
+		SeparatorProcessor: String.Casification.TokenProcessor
 	>(
 		prefixPredicate: PrefixPredicate,
-		mapSeparator: @escaping MapSeparator,
+		separatorProcessor: SeparatorProcessor,
 		firstModifier: FirstModifier,
 		restModifier: RestModifier,
-		numericModifier: NumericModifier,
-		forceFirstModifierAfterNumeric: Bool = false,
-		forceDisableModifierForSingleLetterAfterNumeric: Bool = false
-	) {
-		self.init(
-			prefixPredicate: prefixPredicate,
-			separatorTokenProcessor: .inline { index, tokens in
-				guard let token = tokens[safe: index] else { return [] }
-				return [
-					.init(
-						mapSeparator(
-						token.value,
-						tokens[safe: index - 1],
-						tokens[safe: (index + 1)...]
-					),
-						kind: token.kind
-					)
-				]
-			},
-			firstModifier: firstModifier,
-			restModifier: restModifier,
-			numericModifier: numericModifier,
-			forceFirstModifierAfterNumeric: forceFirstModifierAfterNumeric,
-			forceDisableModifierForSingleLetterAfterNumeric: forceDisableModifierForSingleLetterAfterNumeric
-		)
-	}
-
-	public init<
-		FirstModifier: String.Casification.Modifier,
-		RestModifier: String.Casification.Modifier,
-		NumericModifier: String.Casification.Modifier,
-		SeparatorTokenProcessor: String.Casification.TokenProcessor
-	>(
-		prefixPredicate: PrefixPredicate,
-		separatorTokenProcessor: SeparatorTokenProcessor,
-		firstModifier: FirstModifier,
-		restModifier: RestModifier,
-		numericModifier: NumericModifier,
-		forceFirstModifierAfterNumeric: Bool = false,
-		forceDisableModifierForSingleLetterAfterNumeric: Bool = false
+		numericModifier: NumericModifier
 	) {
 		self.init(
 			tokenProcessor: .init { index, tokens in
 				guard let token = tokens[safe: index] else { return [] }
 
 				if token.kind == .separator {
-					return separatorTokenProcessor.processToken(at: index, in: tokens)
+					return separatorProcessor.processToken(at: index, in: tokens)
 				}
 
 				if token.kind == .number {
@@ -136,27 +92,6 @@ where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
 							kind: token.kind
 						),
 					]
-				}
-
-				let afterNumeric: Bool = tokens[safe: ..<index]
-					.reversed()
-					.first(where: { $0.kind != .separator })?.kind == .number
-
-				if afterNumeric {
-					if
-						forceDisableModifierForSingleLetterAfterNumeric,
-						token.value.count == 1,
-						token.value.first?.isLetter == true
-					{ return [token] }
-
-					if forceFirstModifierAfterNumeric {
-						return [
-							.init(
-								firstModifier.transform(token.value),
-								kind: token.kind
-							),
-						]
-					}
 				}
 
 				let alreadyCaughtNonNumeric: Bool = tokens[safe: ..<index]
