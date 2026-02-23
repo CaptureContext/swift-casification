@@ -42,14 +42,6 @@ A set of predefined string modifiers is available out of the box
 
 Those modifiers are a bit more complex and do support configuration
 
-- `String.Casification.PrefixPredicate` allows configuring allowed prefixes, `.swiftDeclarations` is used by default allowing `$` and `_` symbols for prefixes
-- You can also provide a list of acronyms. The default list is available through [`Set<Substring>.standardAcronyms`](./Sources/Casification/Casification.swift). This value leverages `TaskLocal` to provide override mechanisms
-
-  - Override default acronyms using `prepareAcronyms(_:)` function at the start of the app
-  - Override default acronyms in scoped context using `withAcronyms(_:)` function
-
-  
-
 | Modifiers           | Examples                  |
 | ------------------- | ------------------------- |
 | `camel(.camel)`     | some string → someString  |
@@ -66,32 +58,58 @@ Those modifiers are a bit more complex and do support configuration
 >
 > _See [Tests](./Tests/CasificationTests) for more examples_
 
-#### Camel
+#### Configuration
 
-Camel case modifiers do also support advanced configuration, we're considering adding `prepareCamelCaseConfig(_:)` function for overriding defaults, however in `0.3.0` you'll have to explicitly pass configuration
+Tokenization uses list of acronyms to properly handle common values like `UUID`, but the list is limited and statically defined, which may lead to tokenization misses for such values. Tokenization misses will lead to incorrect formatting for some modifiers.
+
+There are 2 ways to override existing acronyms
+
+First one is overriding default values globally using `prepareAcronyms(_:)` function and should be performed at the application start (as early as possible):
 
 ```swift
-extension String {
-  func customCamelCase(
-    _ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic
-  ) -> String {
-    self.case(.camel(
-    	mode, // "Grid view" → "GridView" | "grid View" → "gridView"
-      numbers: .init(
-      	nextTokenMode: .inherit,
-        separator: "_",
-				singleLetterBounaryOptions: [
-					.disableSeparators, // "Grid1x1" → "Grid_1X1" instead of "grid_1_X_1"
-					.disableNextTokenProcessing, // "Grid1x1" → "Grid_1_x_1" instead of "Grid_1_X_1"
-				]
-      ),
-      acronyms: .init(
-        processingPolicy: .alwaysMatchCase // "some id" → "someID" instead of "someId"
-      ),
-      prefixPredicate: .swiftDeclarations // only allows "$" and "_" in prefixes
-    ))
-  }
+prepareAcronyms { $0 
+	.formUnion(["uml", "Uml", "UML"])              
 }
+
+"uml_string".case(.pascal) // UMLString
+```
+
+Second one is providing contextual override using `withAcronyms(_:operation:)` function:
+
+```swift
+"uml_string".case(.pascal) // UmlString
+
+withAcronyms { $0 
+	.formUnion(["uml", "Uml", "UML"]) 
+} operation: {
+	"uml_string".case(.pascal) // UMLString
+}
+```
+
+#### Camel
+
+Camel case modifiers do also support advanced configuration
+
+You can use explicit parameters:
+
+```swift
+"string_id".case(.camel()) // stringID
+
+"string_id".case(.camel(
+	mode: .pascal,
+  acronyms: .init(processingPolicy: .alwaysCapitalize)
+)) // stringId
+```
+
+You can override default config using `prepareCamelCase(_:)` function and it also should be performed at the application start (as early as possible):
+
+```swift
+prepareCamelCase { 
+	$0.mode = .automatic
+  $0.acronyms.processingPolicy = .alwaysCapitalize
+}
+
+"string_id".case(.camel()) // stringId
 ```
 
 ### Composing modifiers
@@ -190,7 +208,7 @@ If you use SwiftPM for your project structure, add `swift-casification` dependen
 ```swift
 .package(
   url: "https://github.com/capturecontext/swift-casification.git", 
-  .upToNextMinor("0.3.0")
+  .upToNextMinor("0.4.0")
 )
 ```
 

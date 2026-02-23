@@ -1,16 +1,17 @@
 import Foundation
 import IssueReporting
+import ConcurrencyExtras
 
-extension String.Casification.Modifiers {
-	public struct CamelCaseConfig {
+extension String.Casification {
+	public struct CamelCaseConfig: Equatable, Sendable {
 		public var mode: Mode
 		public var numbers: Numbers
 		public var acronyms: Acronyms
 
 		public init(
-			mode: Mode = .automatic,
-			numbers: Numbers = .default,
-			acronyms: Acronyms = .default
+			mode: Mode = Self.default.mode,
+			numbers: Numbers = Self.default.numbers,
+			acronyms: Acronyms = Self.default.acronyms
 		) {
 			self.mode = mode
 			self.numbers = numbers
@@ -22,14 +23,22 @@ extension String.Casification.Modifiers {
 			.init(mode: mode, numbers: numbers, acronyms: acronyms)
 		}
 
-		public enum Mode {
+		public enum Mode: Equatable, Sendable {
+			public static let standard: Self = .automatic
+			public static var `default`: Self { CamelCaseConfig.default.mode }
+
 			case automatic
 			case camel
 			case pascal
 		}
 
-		public struct Numbers {
-			@inlinable
+		public struct Numbers: Equatable, Sendable {
+			public static let standard: Self = .init(
+				nextTokenMode: .standard,
+				separator: "_",
+				singleLetterBounaryOptions: .standard
+			)
+
 			public static var `default`: Self { .init() }
 
 			public var nextTokenMode: NextTokenMode
@@ -37,19 +46,25 @@ extension String.Casification.Modifiers {
 			public var singleLetterBounaryOptions: SingleLetterBoundaryOptions
 
 			public init(
-				nextTokenMode: NextTokenMode = .inherit,
-				separator: Substring = "_",
-				singleLetterBounaryOptions: SingleLetterBoundaryOptions = [
-					.disableSeparators,
-					.disableNextTokenProcessing,
-				]
+				nextTokenMode: NextTokenMode = .default,
+				separator: Substring = CamelCaseConfig.default.numbers.separator,
+				singleLetterBounaryOptions: SingleLetterBoundaryOptions = .default
 			) {
 				self.nextTokenMode = nextTokenMode
 				self.separator = separator
 				self.singleLetterBounaryOptions = singleLetterBounaryOptions
 			}
 
-			public struct SingleLetterBoundaryOptions: OptionSet {
+			public struct SingleLetterBoundaryOptions: OptionSet, Equatable, Sendable {
+				public static let standard: Self = [
+					.disableSeparators,
+					.disableNextTokenProcessing
+				]
+
+				public static var `default`: Self {
+					CamelCaseConfig.default.numbers.singleLetterBounaryOptions
+				}
+
 				public var rawValue: UInt
 
 				public init(rawValue: UInt) {
@@ -60,7 +75,10 @@ extension String.Casification.Modifiers {
 				public static var disableNextTokenProcessing: Self { .init(rawValue: 1 << 1) }
 			}
 
-			public enum NextTokenMode {
+			public enum NextTokenMode: Equatable, Sendable {
+				public static let standard: Self = .inherit
+				public static var `default`: Self { CamelCaseConfig.default.numbers.nextTokenMode }
+
 				case inherit
 				case override(Mode = .automatic)
 
@@ -73,21 +91,22 @@ extension String.Casification.Modifiers {
 			}
 		}
 
-		public struct Acronyms {
-			@inlinable
+		public struct Acronyms: Equatable, Sendable {
+			public static let standard: Self = .init(processingPolicy: .standard)
 			public static var `default`: Self { .init() }
 
 			@usableFromInline
 			var processingPolicy: ProcessingPolicy
 
 			public init(
-				processingPolicy: ProcessingPolicy = .default
+				processingPolicy: ProcessingPolicy = CamelCaseConfig.default.acronyms.processingPolicy
 			) {
 				self.processingPolicy = processingPolicy
 			}
 
-			public enum ProcessingPolicy {
-				public static var `default`: Self { .alwaysMatchCase }
+			public enum ProcessingPolicy: Equatable, Sendable {
+				public static let standard: Self = .alwaysMatchCase
+				public static var `default`: Self { CamelCaseConfig.default.acronyms.processingPolicy }
 
 				/// Keep acronyms as parsed
 				///
@@ -141,25 +160,28 @@ extension String.Casification.Modifiers {
 			}
 		}
 	}
+}
 
+extension String.Casification.Modifiers {
 	public struct Camel<
 		PrefixPredicate: String.Casification.PrefixPredicate
 	>: String.Casification.Modifier {
+		public typealias Config = String.Casification.CamelCaseConfig
 		public typealias SeparatorTokenProcessor = String.Casification.TokenProcessor
 
 		@usableFromInline
 		struct FirstTokenModifier: String.Casification.Modifier {
 			@usableFromInline
-			internal var config: CamelCaseConfig
+			internal var config: Config
 
 			@usableFromInline
-			init(config: CamelCaseConfig) {
+			init(config: Config) {
 				self.config = config
 			}
 
 			@usableFromInline
 			func withMode(
-				_ mode: CamelCaseConfig.Mode
+				_ mode: Config.Mode
 			) -> Self {
 				.init(config: config.withMode(mode))
 			}
@@ -207,11 +229,11 @@ extension String.Casification.Modifiers {
 		@usableFromInline
 		struct RestTokensModifier: String.Casification.Modifier {
 			@usableFromInline
-			internal var acronyms: CamelCaseConfig.Acronyms
+			internal var acronyms: Config.Acronyms
 
 			@usableFromInline
 			init(
-				acronyms: CamelCaseConfig.Acronyms
+				acronyms: Config.Acronyms
 			) {
 				self.acronyms = acronyms
 			}
@@ -233,7 +255,7 @@ extension String.Casification.Modifiers {
 		}
 
 		@usableFromInline
-		internal let config: CamelCaseConfig
+		internal let config: Config
 
 		@usableFromInline
 		internal let prefixPredicate: PrefixPredicate
@@ -243,7 +265,7 @@ extension String.Casification.Modifiers {
 
 		@inlinable
 		public init(
-			config: CamelCaseConfig = .init(),
+			config: Config = .init(),
 			prefixPredicate: PrefixPredicate
 		) {
 			self.init(
@@ -302,7 +324,7 @@ extension String.Casification.Modifiers {
 
 		@usableFromInline
 		internal init(
-			config: CamelCaseConfig = .init(),
+			config: Config = .init(),
 			prefixPredicate: PrefixPredicate,
 			separatorTokenProcessor: SeparatorTokenProcessor
 		) {
@@ -406,9 +428,9 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 
 	@inlinable
 	public static func camel(
-		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
-		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default
+		_ mode: String.Casification.CamelCaseConfig.Mode = .default,
+		numbers: String.Casification.CamelCaseConfig.Numbers = .default,
+		acronyms: String.Casification.CamelCaseConfig.Acronyms = .default
 	) -> Self {
 		return .init(
 			config: .init(mode: mode, numbers: numbers, acronyms: acronyms),
@@ -420,9 +442,9 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 extension String.Casification.Modifier where Self == String.Casification.Modifiers.AnyModifier {
 	@inlinable
 	public static func camel<PrefixPredicate: String.Casification.PrefixPredicate>(
-		_ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic,
-		numbers: String.Casification.Modifiers.CamelCaseConfig.Numbers = .default,
-		acronyms: String.Casification.Modifiers.CamelCaseConfig.Acronyms = .default,
+		_ mode: String.Casification.CamelCaseConfig.Mode = .default,
+		numbers: String.Casification.CamelCaseConfig.Numbers = .default,
+		acronyms: String.Casification.CamelCaseConfig.Acronyms = .default,
 		prefixPredicate: PrefixPredicate,
 	) -> Self {
 		return .init(String.Casification.Modifiers.Camel(
@@ -432,14 +454,208 @@ extension String.Casification.Modifier where Self == String.Casification.Modifie
 	}
 }
 
+// MARK: - TaskLocals
+
+extension String.Casification.CamelCaseConfig {
+	public static var `default`: Self { _default.value }
+
+	@TaskLocal
+	@_spi(Internals)
+	public static var _default: LockIsolated<Self> = _storedDefault
+
+	@_spi(Internals)
+	public static let _storedDefault: LockIsolated<Self> = .init(standard)
+
+	public static let standard: Self = .init(
+		mode: .standard,
+		numbers: .standard,
+		acronyms: .standard
+	)
+}
+
+// MARK: LocalExtensions
+
 extension String.Casification.Token {
 	@usableFromInline
 	var isSingleLetter: Bool { value.count == 1 && value.first?.isLetter == true }
 }
 
-extension String.Casification.Modifiers.CamelCaseConfig {
+extension String.Casification.CamelCaseConfig {
 	@usableFromInline
 	var modeAfterNumber: Mode {
 		numbers.nextTokenMode.overridenValue ?? mode
 	}
+}
+
+// MARK: Overrides
+
+let camelCasePrepared: LockIsolated<Bool> = .init(false)
+
+/// Prepares default camel case config for the lifetime of your application.
+///
+/// This can be used to set up the initial default camel case config for your application in the entry point
+/// of your app, or for Xcode previews. It is best to call this as early as possible in the lifetime
+/// of your app.
+///
+/// For example, in a SwiftUI entry point, it is appropriate to call this in the initializer of
+/// your `App` conformance:
+///
+/// ```swift
+/// @main
+/// struct MyApp: App {
+///   init() {
+///     prepareCamelCase(.init(mode: .pascal))
+///   }
+///
+///   // ...
+/// }
+/// ```
+///
+/// Or in an app delegate entry point, you can invoke it from `didFinishLaunchingWithOptions`:
+///
+/// ```swift
+/// @main
+/// class AppDelegate: UIResponder, UIApplicationDelegate {
+///   func application(
+///     _ application: UIApplication,
+///     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+///   ) -> Bool {
+///     prepareCamelCase(.init(mode: .pascal))
+///     // Override point for customization after application launch.
+///     return true
+///   }
+///
+///   // ...
+/// }
+/// ```
+///
+/// > Important: Preparation should be performed at most a single time, and should be prepared
+/// > before it has been accessed. If you attempt to prepare the config multiple times a runtime warning will be emitted.
+///
+/// > Note: It is technically possible to use ``prepareCamelCase(_:fileID:filePath:line:column:)->()`` in tests:
+/// >
+/// >```swift
+/// >@Suite struct FeatureTests {
+/// >  init() {
+/// >    prepareCamelCase(.init(mode: .pascal))
+/// >  }
+/// >
+/// >  // ...
+/// >}
+/// >```
+/// >
+/// > However, ``prepareCamelCase(_:fileID:filePath:line:column:)->()``
+/// > is not compatible with running tests repeatedly or
+/// > parameterized tests, and so you may not want to use it for testing.
+///
+/// - Parameters:
+///   - newDefaultValues: New default values for the config for the lifetime of your application.
+public func prepareCamelCase(
+	_ newDefaultConfig: String.Casification.CamelCaseConfig,
+	fileID: StaticString = #fileID,
+	filePath: StaticString = #filePath,
+	line: UInt = #line,
+	column: UInt = #column
+) {
+	prepareCamelCase(
+		{ $0 = newDefaultConfig },
+		fileID: fileID,
+		filePath: filePath,
+		line: line,
+		column: column
+	)
+}
+
+/// Prepares default camel case config for the lifetime of your application.
+///
+/// This can be used to set up the initial default camel case config for your application in the entry point
+/// of your app, or for Xcode previews. It is best to call this as early as possible in the lifetime
+/// of your app.
+///
+/// For example, in a SwiftUI entry point, it is appropriate to call this in the initializer of
+/// your `App` conformance:
+///
+/// ```swift
+/// @main
+/// struct MyApp: App {
+///   init() {
+///     prepareCamelCase { $0.mode = .pascal }
+///   }
+///
+///   // ...
+/// }
+/// ```
+///
+/// Or in an app delegate entry point, you can invoke it from `didFinishLaunchingWithOptions`:
+///
+/// ```swift
+/// @main
+/// class AppDelegate: UIResponder, UIApplicationDelegate {
+///   func application(
+///     _ application: UIApplication,
+///     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+///   ) -> Bool {
+///     prepareCamelCase { $0.mode = .pascal }
+///     // Override point for customization after application launch.
+///     return true
+///   }
+///
+///   // ...
+/// }
+/// ```
+///
+/// > Important: Preparation should be performed at most a single time, and should be prepared
+/// > before it has been accessed. If you attempt to prepare the config multiple times a runtime warning will be emitted.
+///
+/// > Note: It is technically possible to use ``prepareCamelCase(_:fileID:filePath:line:column:)->_`` in tests:
+/// >
+/// >```swift
+/// >@Suite struct FeatureTests {
+/// >  init() {
+/// >    prepareCamelCase { $0.mode = .pascal }
+/// >  }
+/// >
+/// >  // ...
+/// >}
+/// >```
+/// >
+/// > However, ``prepareCamelCase(_:fileID:filePath:line:column:)->_``
+/// > is not compatible with running tests repeatedly or
+/// > parameterized tests, and so you may not want to use it for testing.
+///
+/// - Parameters:
+///   - updateValues: A closure for updating the current default values for the config  for the lifetime of your application.
+public func prepareCamelCase<R>(
+	_ updateValues: @Sendable (inout String.Casification.CamelCaseConfig) throws -> R,
+	fileID: StaticString = #fileID,
+	filePath: StaticString = #filePath,
+	line: UInt = #line,
+	column: UInt = #column
+) rethrows -> R {
+	camelCasePrepared.withValue { flag in
+		#if DEBUG
+		if flag {
+			reportIssue(
+				"""
+				CamelCaseConfig has already been prepared.
+				
+				CamelCaseConfig can only be prepared a single time and shouldn't be \
+				accessed beforehand. Prepare the config as early as possible in the \
+				lifecycle of your application.
+				""",
+				fileID: fileID,
+				filePath: filePath,
+				line: line,
+				column: column
+			)
+		}
+		#endif
+		flag = true
+	}
+
+	var config = String.Casification.CamelCaseConfig.default
+	let result = try updateValues(&config)
+	let updatedConfig = config
+	String.Casification.CamelCaseConfig._storedDefault.withValue { $0 = updatedConfig }
+	return result
 }

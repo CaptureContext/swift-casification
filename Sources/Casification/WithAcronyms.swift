@@ -53,7 +53,7 @@ let acronymsPrepared: LockIsolated<Bool> = .init(false)
 /// > Important: Preparation should be performed at most a single time, and should be prepared
 /// > before it has been accessed. If you attempt to prepare acronyms multiple times a runtime warning will be emitted.
 ///
-/// > Note: It is technically possible to use ``prepareAcronyms(_:)``  in tests:
+/// > Note: It is technically possible to use ``prepareAcronyms(_:fileID:filePath:line:column:)->()`` in tests:
 /// >
 /// >```swift
 /// >@Suite struct FeatureTests {
@@ -65,7 +65,8 @@ let acronymsPrepared: LockIsolated<Bool> = .init(false)
 /// >}
 /// >```
 /// >
-/// > However, ``prepareAcronyms(_:)`` is not compatible with running tests repeatedly or
+/// > However, ``prepareAcronyms(_:fileID:filePath:line:column:)->()``
+/// > is not compatible with running tests repeatedly or
 /// > parameterized tests, and so you may not want to use it for testing.
 ///
 /// - Parameters:
@@ -133,7 +134,7 @@ public func prepareAcronyms(
 /// > Important: Preparation should be performed at most a single time, and should be prepared
 /// > before it has been accessed. If you attempt to prepare acronyms multiple times a runtime warning will be emitted.
 ///
-/// > Note: It is technically possible to use ``prepareAcronyms(_:)``  in tests:
+/// > Note: It is technically possible to use ``prepareCamelCase(_:fileID:filePath:line:column:)->_``  in tests:
 /// >
 /// >```swift
 /// >@Suite struct FeatureTests {
@@ -145,7 +146,8 @@ public func prepareAcronyms(
 /// >}
 /// >```
 /// >
-/// > However, ``prepareAcronyms(_:)`` is not compatible with running tests repeatedly or
+/// > However, ``prepareCamelCase(_:fileID:filePath:line:column:)->_``
+/// > is not compatible with running tests repeatedly or
 /// > parameterized tests, and so you may not want to use it for testing.
 ///
 /// - Parameters:
