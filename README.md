@@ -43,7 +43,12 @@ A set of predefined string modifiers is available out of the box
 Those modifiers are a bit more complex and do support configuration
 
 - `String.Casification.PrefixPredicate` allows configuring allowed prefixes, `.swiftDeclarations` is used by default allowing `$` and `_` symbols for prefixes
-- You can also provide a list of acronyms. The default list is available at [`String.Casification.standardAcronyms`](./Sources/Casification/Casification.swift), there is no way to modify this list at least yet, but you can explicitly specify your own, we'll add modification mechanism in future versions of the library.
+- You can also provide a list of acronyms. The default list is available through [`Set<Substring>.standardAcronyms`](./Sources/Casification/Casification.swift). This value leverages `TaskLocal` to provide override mechanisms
+
+  - Override default acronyms using `prepareAcronyms(_:)` function at the start of the app
+  - Override default acronyms in scoped context using `withAcronyms(_:)` function
+
+  
 
 | Modifiers           | Examples                  |
 | ------------------- | ------------------------- |
@@ -51,8 +56,8 @@ Those modifiers are a bit more complex and do support configuration
 | `camel(.pascal)`    | some string → SomeString  |
 | `camel`            | some string → someString  |
 | `pascal`           | some string → SomeString  |
-| `camel(.automatic)` | some string → someString  |
-| `camel(.automatic)` | Some string → SomeString  |
+| `camel(.automatic)` | `camel()` | some string → someString  |
+| `camel(.automatic)` | `camel()` | Some string → SomeString  |
 | `snake()`           | some string → some_string |
 | `kebab()`           | some string → some-string |
 | `dot()`             | some string → some.string |
@@ -60,6 +65,34 @@ Those modifiers are a bit more complex and do support configuration
 >  [!NOTE] 
 >
 > _See [Tests](./Tests/CasificationTests) for more examples_
+
+#### Camel
+
+Camel case modifiers do also support advanced configuration, we're considering adding `prepareCamelCaseConfig(_:)` function for overriding defaults, however in `0.3.0` you'll have to explicitly pass configuration
+
+```swift
+extension String {
+  func customCamelCase(
+    _ mode: String.Casification.Modifiers.CamelCaseConfig.Mode = .automatic
+  ) -> String {
+    self.case(.camel(
+    	mode, // "Grid view" → "GridView" | "grid View" → "gridView"
+      numbers: .init(
+      	nextTokenMode: .inherit,
+        separator: "_",
+				singleLetterBounaryOptions: [
+					.disableSeparators, // "Grid1x1" → "Grid_1X1" instead of "grid_1_X_1"
+					.disableNextTokenProcessing, // "Grid1x1" → "Grid_1_x_1" instead of "Grid_1_X_1"
+				]
+      ),
+      acronyms: .init(
+        processingPolicy: .alwaysMatchCase // "some id" → "someID" instead of "someId"
+      ),
+      prefixPredicate: .swiftDeclarations // only allows "$" and "_" in prefixes
+    ))
+  }
+}
+```
 
 ### Composing modifiers
 
