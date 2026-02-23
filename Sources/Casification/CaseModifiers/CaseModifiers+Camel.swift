@@ -313,7 +313,6 @@ extension String.Casification.Modifiers {
 
 		@inlinable
 		public func transform(_ input: Substring) -> Substring {
-			let detectedPascal = input.first(where: { $0.isLetter })?.isUppercase == true
 			let defaultFirstModifier = FirstTokenModifier(config: config)
 			let defaultRestModifier = RestTokensModifier(acronyms: config.acronyms)
 
@@ -346,7 +345,16 @@ extension String.Casification.Modifiers {
 
 							switch config.modeAfterNumber {
 							case .automatic:
-								if detectedPascal {
+								var isPascal = false
+
+								for token in tokens {
+									if let letter = token.value.first(where: { $0.isLetter }) {
+										isPascal = letter.isUppercase
+										break
+									}
+								}
+
+								if isPascal {
 									return [token.withValue(defaultFirstModifier.withMode(.pascal).transform(token.value))]
 								} else {
 									return [token.withValue(defaultFirstModifier.withMode(.camel).transform(token.value))]
