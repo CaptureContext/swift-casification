@@ -80,9 +80,9 @@ Second one is providing contextual override using `withAcronyms(_:operation:)` f
 "uml_string".case(.pascal) // UmlString
 
 withAcronyms { $0 
-	.formUnion(["uml", "Uml", "UML"]) 
+  .formUnion(["uml", "Uml", "UML"]) 
 } operation: {
-	"uml_string".case(.pascal) // UMLString
+  "uml_string".case(.pascal) // UMLString
 }
 ```
 
@@ -189,17 +189,20 @@ extension String.Casification.TokensProcessors {
     public func processTokens(
       _ tokens: ArraySlice<String.Casification.Token>
     ) -> ArraySlice<String.Casification.Token> {
-      return filter { $0.kind != .separator }[...]
+      return tokens.filter { $0.kind != .separator }[...]
     }
   }
 }
 
+extension String.Casification.TokensProcessor
+where Self == String.Casification.TokensProcessors.RemoveSeparators {
+  public static var removeSeparators: Self { .init() }
+}
+
 extension String.Casification.Modifier
-where Self == String.Casification.Modifier.ProcessingTokens<
-  String.Casification.TokensProcessors.RemoveSeparators
->{
+where Self == String.Casification.Modifiers.AnyModifier {
   public var noSeparators: Self {
-    .init(using: .init())
+    .processingTokens(with: .removeSeparators)
   }
 }
 ```
