@@ -1,5 +1,5 @@
 extension Set where Element == Substring {
-	public static var currentAcronyms: Self { String.Casification.Configuration.current.acronyms }
+	public static var currentAcronyms: Self { String.Casification.Configuration.current.common.acronyms }
 	public static let defaultAcronyms: Self = [
 		"uri", "Uri", "URI",
 		"url", "Url", "URL",
@@ -24,7 +24,7 @@ extension Set where Element == Substring {
 
 // MARK: - ConfigurationKey
 
-extension String.Casification.Configuration {
+extension String.Casification.Configuration.Common {
 	private enum AcronymsKey: String.Casification.ConfigurationKey {
 		static var `default`: Set<Substring> { .defaultAcronyms }
 	}
@@ -32,5 +32,13 @@ extension String.Casification.Configuration {
 	public var acronyms: Set<Substring> {
 		get { self[AcronymsKey.self] }
 		set { self[AcronymsKey.self] = newValue }
+	}
+}
+
+extension String.Casification.Configuration {
+	/// Alias for `common.acronyms`
+	public var acronyms: Set<Substring> {
+		get { common.acronyms }
+		set { common.acronyms = newValue }
 	}
 }

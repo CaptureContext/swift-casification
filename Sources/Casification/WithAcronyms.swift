@@ -56,7 +56,7 @@ public func withAcronyms<R>(
 	operation: () throws -> R
 ) rethrows -> R {
 	try withCasification(
-		{ try updateValuesForOperation(&$0.acronyms) },
+		{ try updateValuesForOperation(&$0.common.acronyms) },
 		operation: operation
 	)
 }
@@ -120,7 +120,7 @@ public func withAcronyms<R>(
 	operation: () async throws -> R
 ) async rethrows -> R {
 	try await withCasification(
-		{ try await updateValuesForOperation(&$0.acronyms) },
+		{ try await updateValuesForOperation(&$0.common.acronyms) },
 		operation: operation
 	)
 }

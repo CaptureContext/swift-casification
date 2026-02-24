@@ -12,7 +12,7 @@ extension String.Casification.Tokenizers {
 		@usableFromInline
 		internal var config
 
-		@String.Casification.ConfigurationReader(\.acronyms)
+		@String.Casification.ConfigurationReader(\.common.acronyms)
 		@usableFromInline
 		internal var acronyms
 

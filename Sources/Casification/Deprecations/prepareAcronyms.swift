@@ -7,7 +7,7 @@ public func prepareAcronyms(
 	column: UInt = #column
 ) {
 	String.Casification.prepareConfiguration(
-		{ $0.acronyms = newValues },
+		{ $0.common.acronyms = newValues },
 		fileID: fileID,
 		filePath: filePath,
 		line: line,
@@ -27,7 +27,7 @@ public func prepareAcronyms<R>(
 	let result = try updateValues(&acronyms)
 	let updatedAcronyms = acronyms
 	String.Casification.prepareConfiguration(
-		{ $0.acronyms = updatedAcronyms },
+		{ $0.common.acronyms = updatedAcronyms },
 		fileID: fileID,
 		filePath: filePath,
 		line: line,

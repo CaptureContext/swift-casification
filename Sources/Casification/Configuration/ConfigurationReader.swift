@@ -25,3 +25,9 @@ extension String.Casification {
 		}
 	}
 }
+
+extension String.Casification.ConfigurationReader where T == String.Casification.Configuration {
+	public init() {
+		self.init(\.self)
+	}
+}
