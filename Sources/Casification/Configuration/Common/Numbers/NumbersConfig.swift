@@ -14,7 +14,7 @@ extension String.Casification.Configuration.Common {
 		public var allowedDelimeters: Set<Character>
 		public var boundaryOptions: Set<BoundaryOption>
 
-		init(
+		public init(
 			allowedDelimeters: Set<Character> =
 			String.Casification.Configuration.current.common.numbers.allowedDelimeters,
 
