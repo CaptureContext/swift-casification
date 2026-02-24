@@ -63,8 +63,7 @@ extension String.Casification.Configuration {
 			public static var current: Self { .init() }
 			public static let `default`: Self = .init(processingPolicy: .default)
 
-			@usableFromInline
-			var processingPolicy: ProcessingPolicy
+			public var processingPolicy: ProcessingPolicy
 
 			public init(
 				processingPolicy: ProcessingPolicy = .current

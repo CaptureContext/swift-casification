@@ -26,6 +26,11 @@ extension String.Casification.Configuration.Common {
 		}
 
 		public struct BoundaryOption: Sendable, Hashable {
+			@_spi(Internals)
+			public var _isDefaultSingleLetter: Bool {
+				id._casification_isEqual(to: "single_letter")
+			}
+
 			public static func singleLetter(
 				_ options: NumericBoundaryOptions
 			) -> Self {
