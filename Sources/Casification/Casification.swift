@@ -1,41 +1,7 @@
 import Foundation
-import ConcurrencyExtras
-
-extension Set where Element == Substring {
-	public static var standardAcronyms: Self { String.Casification.acronyms.value }
-}
 
 extension String {
-	public enum Casification {
-		@TaskLocal
-		@_spi(Internals)
-		public static var acronyms: LockIsolated<Set<Substring>> = _defaultAcronyms
-
-		@_spi(Internals)
-		public static let _defaultAcronyms: LockIsolated<Set<Substring>> = .init(_standardAcronyms)
-
-		@_spi(Internals)
-		public static let _standardAcronyms: Set<Substring> = [
-			"uri", "Uri", "URI",
-			"url", "Url", "URL",
-			"spm", "Spm", "SPM",
-			"npm", "Npm", "NPM",
-			"id", "Id", "ID", // todo: add more common acronyms like SQL
-			"uuid", "Uuid", "UUID",
-			"ulid", "Ulid", "ULID",
-			"usid", "Usid", "USID",
-			"idfa", "Idfa", "IDFA",
-			"void", "Void", "VOID",
-			"json", "Json", "JSON",
-			"xml", "Xml", "XML",
-			"yaml", "Yaml", "YAML", // todo: add more extensions
-			"sf", "SF",
-			"ns", "NS",
-			"ui", "UI",
-			"ux", "UX",
-			"sk", "SK" // todo: add more system prefixes
-		]
-	}
+	public enum Casification {}
 }
 
 extension String.Casification {

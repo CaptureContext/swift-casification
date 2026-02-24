@@ -8,11 +8,19 @@ where Self == String.Casification.Tokenizers.Default {
 
 extension String.Casification.Tokenizers {
 	public struct Default: String.Casification.Tokenizer {
+		@String.Casification.ConfigurationReader(\.common)
+		@usableFromInline
+		internal var config
+
+		@String.Casification.ConfigurationReader(\.acronyms)
+		@usableFromInline
+		internal var acronyms
+
 		public init() {}
 
 		@inlinable
 		public func tokenize(_ input: Substring) -> [String.Casification.Token] {
-			let acronyms = Set.standardAcronyms.sorted(by: { $0.count > $1.count })
+			let acronyms = acronyms.sorted(by: { $0.count > $1.count })
 
 			var tokens: [String.Casification.Token] = []
 			var currentStart = input.startIndex
@@ -101,18 +109,28 @@ extension String.Casification.Tokenizers {
 				do { // match separators
 					let char = input[currentIndex]
 					if !char.isAlphanumeric {
-						commitToken(upTo: currentIndex)
-
-						let start = currentIndex
-						while
-							currentIndex < input.endIndex,
-							!input[currentIndex].isAlphanumeric
+						if
+							config.numbers.allowedDelimeters.isNotEmpty,
+							let prev = input[safe: input.index(before: currentIndex)],
+							let next = input[safe: input.index(after: currentIndex)],
+							prev.isNumber, next.isNumber, config.numbers.allowedDelimeters.contains(char)
 						{
 							currentIndex = input.index(after: currentIndex)
+							continue
+						} else {
+							commitToken(upTo: currentIndex)
+
+							let start = currentIndex
+							while
+								currentIndex < input.endIndex,
+								!input[currentIndex].isAlphanumeric
+							{
+								currentIndex = input.index(after: currentIndex)
+							}
+							commitToken(input[start..<currentIndex], kind: .separator)
+							currentStart = currentIndex
+							continue
 						}
-						commitToken(input[start..<currentIndex], kind: .separator)
-						currentStart = currentIndex
-						continue
 					}
 				}
 

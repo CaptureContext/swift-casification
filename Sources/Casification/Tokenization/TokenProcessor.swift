@@ -38,7 +38,7 @@ extension String.Casification.TokenProcessors {
 		}
 	}
 
-	public struct InlineTokenProcessor: String.Casification.TokenProcessor {
+	public struct Inline: String.Casification.TokenProcessor {
 		@usableFromInline
 		internal let process: (
 			Int,
@@ -65,7 +65,7 @@ extension String.Casification.TokenProcessors {
 }
 
 extension String.Casification.TokenProcessor
-where Self == String.Casification.TokenProcessors.InlineTokenProcessor {
+where Self == String.Casification.TokenProcessors.Inline {
 	public static func inline(
 		_ process: @escaping (
 			Int,

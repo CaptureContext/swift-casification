@@ -1,4 +1,5 @@
 import Foundation
+import IssueReporting
 
 extension String.Casification.Modifiers {
 	public struct _ProcessingTokensWithProgrammingCaseModifiers<
@@ -124,9 +125,7 @@ where Self == String.Casification.Modifiers.AnyModifier {
 	) -> Self {
 		return ._programmingCaseModifiers(
 			tokenModifier: tokenModifier,
-			separatorProcessor: .inline { index, tokens in
-				return .init([.init("_", kind: .separator)])
-			},
+			separatorProcessor: ._defaultProgrammingCaseSeparator("_"),
 			prefixPredicate: prefixPredicate
 		)
 	}
@@ -158,9 +157,7 @@ where Self == String.Casification.Modifiers.AnyModifier {
 	) -> Self {
 		return ._programmingCaseModifiers(
 			tokenModifier: tokenModifier,
-			separatorProcessor: .inline { index, tokens in
-				return .init([.init("-", kind: .separator)])
-			},
+			separatorProcessor: ._defaultProgrammingCaseSeparator("-"),
 			prefixPredicate: prefixPredicate
 		)
 	}
@@ -192,10 +189,100 @@ where Self == String.Casification.Modifiers.AnyModifier {
 	) -> Self {
 		return ._programmingCaseModifiers(
 			tokenModifier: tokenModifier,
-			separatorProcessor: .inline { index, tokens in
-				return .init([.init(".", kind: .separator)])
-			},
+			separatorProcessor: ._defaultProgrammingCaseSeparator("."),
 			prefixPredicate: prefixPredicate
 		)
+	}
+}
+
+extension String.Casification.TokenProcessor
+where Self == String.Casification.TokenProcessors.Inline {
+	@usableFromInline
+	static func _defaultProgrammingCaseSeparator(
+		_ defaultSeparator: Substring
+	) -> Self {
+		_defaultProgrammingCaseSeparator(
+			defaultSeparator: defaultSeparator,
+			numericSeparator: defaultSeparator
+		)
+	}
+
+	@_spi(Internals)
+	public static func _defaultProgrammingCaseSeparator(
+		defaultSeparator: Substring?,
+		numericSeparator: Substring?
+	) -> Self {
+		@String.Casification.ConfigurationReader(\.common)
+		var config
+
+		return .inline { index, tokens in
+			guard let token = tokens[safe: index] else { return [] }
+
+			let numericSeparatorToken: String.Casification.Token? = numericSeparator.map {
+				.init($0, kind: .separator)
+			}
+
+			let prevToken = tokens[safe: index - 1]
+			let nextToken = tokens[safe: index + 1]
+
+			do { // verify input
+				let issuesLink = "https://github.com/capturecontext/swift-casification/issues"
+				let actionMessage = "Please sumbit an issue here \(issuesLink)"
+
+				if token.kind != .separator {
+					reportIssue(
+						"""
+						separatorTokenProcessor should only be applied to separators
+						\(actionMessage)
+						"""
+					)
+				} else if nextToken?.kind == .separator || nextToken?.kind == .separator {
+					reportIssue(
+						"""
+						Tokenization should not produce sequences of separators
+						\(actionMessage)
+						"""
+					)
+				}
+			}
+
+			print(prevToken?.description ?? "nil", token.description, nextToken?.description ?? "nil")
+
+			let leadingNumericBoundary = prevToken?.value.last?.isNumber == true
+			if leadingNumericBoundary {
+				guard let nextToken else { return [] }
+
+				if
+					config.numbers.boundaryOptions.contains(
+						where: { $0.predicate(nextToken.value) && $0.options.contains(.disableSeparators) }
+					)
+				{ return [] }
+
+				if let numericSeparatorToken {
+					return [numericSeparatorToken]
+				}
+			}
+
+			let trailingNumericBoundary = nextToken?.value.first?.isNumber == true
+			if trailingNumericBoundary {
+				guard let prevToken else { return [] }
+
+				if
+					config.numbers.boundaryOptions.contains(
+						where: { $0.predicate(prevToken.value) && $0.options.contains(.disableSeparators) }
+					)
+				{ return [] }
+
+				if let numericSeparatorToken {
+					return [numericSeparatorToken]
+				}
+			}
+
+			if let defaultSeparator {
+				return [.init(defaultSeparator, kind: .separator)]
+			} else {
+				return []
+			}
+		}
 	}
 }

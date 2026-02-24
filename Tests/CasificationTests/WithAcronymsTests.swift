@@ -5,11 +5,11 @@ import Testing
 struct WithAcronymsTests {
 	@Test
 	func acronymsOverrdie() async throws {
-		// `prepareAcronyms` should only be called once and even though
+		// `prepareConfiguration` should only be called once and even though
 		// it's technically possible to use it in tests, it overrides
 		// global default and breaks other tests that rely on it
 		//
-		// prepareAcronyms(["test"])
+		// String.Casification.prepareConfiguration { $0.acronyms = ["test"] }
 		//
 		// #expect("test_id"._tokenize() == [
 		// 	"test".asToken(.acronym),

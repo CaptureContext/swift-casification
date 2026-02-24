@@ -77,8 +77,11 @@ where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
 		restModifier: RestModifier,
 		numericModifier: NumericModifier
 	) {
+		@String.Casification.ConfigurationReader(\.common)
+		var config
+
 		self.init(
-			tokenProcessor: .init { index, tokens in
+			tokenProcessor: TokenProcessor { index, tokens in
 				guard let token = tokens[safe: index] else { return [] }
 
 				if token.kind == .separator {
@@ -86,16 +89,23 @@ where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
 				}
 
 				if token.kind == .number {
-					return [
-						.init(
-							numericModifier.transform(token.value),
-							kind: token.kind
-						),
-					]
+					return [token]
 				}
+
+				let afterNumeric: Bool = tokens[safe: ..<index]
+					.reversed()
+					.first(where: { $0.kind != .separator })?.kind == .number
 
 				let alreadyCaughtNonNumeric: Bool = tokens[safe: ..<index]
 					.contains { [.word, .acronym].contains($0.kind) }
+
+				if afterNumeric {
+					if
+						$config.numbers.boundaryOptions.contains(
+							where: { $0.predicate(token.value) && $0.options.contains(.disableNextTokenProcessing) }
+						)
+					{ return [token] }
+				}
 
 				if alreadyCaughtNonNumeric {
 					return [
@@ -117,7 +127,6 @@ where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
 		)
 	}
 }
-
 
 // - MARK: PrefixPredicates
 
