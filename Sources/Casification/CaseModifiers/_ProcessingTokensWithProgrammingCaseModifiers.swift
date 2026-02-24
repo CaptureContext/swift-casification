@@ -246,8 +246,6 @@ where Self == String.Casification.TokenProcessors.Inline {
 				}
 			}
 
-			print(prevToken?.description ?? "nil", token.description, nextToken?.description ?? "nil")
-
 			let leadingNumericBoundary = prevToken?.value.last?.isNumber == true
 			if leadingNumericBoundary {
 				guard let nextToken else { return [] }
