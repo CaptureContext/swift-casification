@@ -1,10 +1,12 @@
+import KeyPathsExtensions
+
 extension String.Casification {
 	@propertyWrapper
 	public struct ConfigurationReader<T>: Sendable {
 		@usableFromInline
 		internal var cachedConfiguration: Configuration = .current
 
-		let keyPath: SendableKeyPath<Configuration, T>
+		let keyPath: _SendableKeyPath<Configuration, T>
 
 		public init(_ keyPath: KeyPath<Configuration, T> & Sendable) {
 			self.keyPath = keyPath

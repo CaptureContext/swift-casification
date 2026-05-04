@@ -161,6 +161,11 @@ extension String.Casification.Modifiers {
 							return [token]
 						}
 
+						let matchingOptions = $config.numbers.boundaryOptions.filter { $0.predicate(index, tokens) }
+						if matchingOptions.contains(where: { $0.options.contains(.disableTokenProcessing) }) {
+							return [token]
+						}
+
 						let afterNumeric: Bool = tokens[safe: ..<index]
 							.reversed()
 							.first(where: { $0.kind != .separator })?.kind == .number
@@ -169,12 +174,6 @@ extension String.Casification.Modifiers {
 							.contains { [.word, .acronym].contains($0.kind) }
 
 						if afterNumeric {
-							if
-								$config.numbers.boundaryOptions.contains(
-									where: { $0.predicate(token.value) && $0.options.contains(.disableNextTokenProcessing) }
-								)
-							{ return [token] }
-
 							switch modeAfterNumber {
 							case .automatic:
 								var isPascal = false

@@ -26,6 +26,10 @@ let package = Package(
 			url: "https://github.com/pointfreeco/xctest-dynamic-overlay.git",
 			.upToNextMajor(from: "1.9.0")
 		),
+		.package(
+			url: "https://github.com/capturecontext/swift-keypaths-extensions.git",
+			.upToNextMinor(from: "0.2.0")
+		),
 	],
 	targets: [
 		.target(
@@ -38,6 +42,10 @@ let package = Package(
 				.product(
 					name: "IssueReporting",
 					package: "xctest-dynamic-overlay"
+				),
+				.product(
+					name: "KeyPathsExtensions",
+					package: "swift-keypaths-extensions"
 				),
 			]
 		),

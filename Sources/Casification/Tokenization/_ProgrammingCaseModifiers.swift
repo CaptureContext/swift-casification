@@ -92,19 +92,12 @@ where TokenProcessor == String.Casification.TokenProcessors.AnyTokenProcessor {
 					return [token]
 				}
 
-				let afterNumeric: Bool = tokens[safe: ..<index]
-					.reversed()
-					.first(where: { $0.kind != .separator })?.kind == .number
-
 				let alreadyCaughtNonNumeric: Bool = tokens[safe: ..<index]
 					.contains { [.word, .acronym].contains($0.kind) }
 
-				if afterNumeric {
-					if
-						$config.numbers.boundaryOptions.contains(
-							where: { $0.predicate(token.value) && $0.options.contains(.disableNextTokenProcessing) }
-						)
-					{ return [token] }
+				let matchingOptions = $config.numbers.boundaryOptions.filter { $0.predicate(index, tokens) }
+				if matchingOptions.contains(where: { $0.options.contains(.disableTokenProcessing) }) {
+					return [token]
 				}
 
 				if alreadyCaughtNonNumeric {
@@ -220,3 +213,4 @@ where Self == String.Casification.PrefixPredicates.AnyPrefixPredicate {
 		return .init(predicate)
 	}
 }
+

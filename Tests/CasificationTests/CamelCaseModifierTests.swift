@@ -34,6 +34,7 @@ struct CamelCaseModifierTests {
 			#expect("grid1x1".case(.camel()) == "grid_1x1")
 			#expect("Grid1x1".case(.camel()) == "Grid_1x1")
 			#expect("lens1x".case(.camel()) == "lens_1x")
+			#expect("arg1".case(.camel()) == "arg1")
 		}
 	}
 
@@ -66,6 +67,7 @@ struct CamelCaseModifierTests {
 			#expect("numbers_1.23.in-a-sentence".case(.camel) == "numbers_1_23_inASentence")
 			#expect("grid1x1".case(.camel) == "grid_1x1")
 			#expect("lens1x".case(.camel) == "lens_1x")
+			#expect("arg1".case(.camel) == "arg1")
 		}
 	}
 

@@ -5,10 +5,15 @@ extension String.Casification.Configuration.Common {
 		public static var current: Self { .init() }
 		public static let `default`: Self = .init(
 			allowedDelimeters: [],
-			boundaryOptions: [.singleLetter([
-				.disableSeparators,
-				.disableNextTokenProcessing
-			])]
+			boundaryOptions: [
+				.endingNumber([
+					.disableSeparators,
+				]),
+				.singleLetter([
+					.disableSeparators,
+					.disableTokenProcessing,
+				])
+			]
 		)
 
 		public var allowedDelimeters: Set<Character>
@@ -26,9 +31,24 @@ extension String.Casification.Configuration.Common {
 		}
 
 		public struct BoundaryOption: Sendable, Hashable {
-			@_spi(Internals)
-			public var _isDefaultSingleLetter: Bool {
-				id._casification_isEqual(to: "single_letter")
+			public static func endingNumber(
+				_ options: NumericBoundaryOptions
+			) -> Self {
+				.init(
+					id: "ending_number",
+					predicate: { index, tokens in
+						guard
+							index == tokens.indices.last,
+							let token = tokens[safe: index]
+						else { return false }
+
+						let afterNonNumeric: Bool = tokens[safe: ..<index]
+							.last(where: { $0.kind != .separator })?.value.last?.isNumber != true
+
+						return afterNonNumeric && token.value.first?.isNumber == true
+					},
+					options: options
+				)
 			}
 
 			public static func singleLetter(
@@ -36,18 +56,28 @@ extension String.Casification.Configuration.Common {
 			) -> Self {
 				.init(
 					id: "single_letter",
-					predicate: { $0.count == 1 && $0.allSatisfy(\.isLetter) },
+					predicate: { index, tokens in
+						guard let token = tokens[safe: index] else { return false }
+
+						let afterNumeric: Bool = tokens[safe: ..<index]
+							.last(where: { $0.kind != .separator })?.value.last?.isNumber == true
+
+						let beforeNumeric: Bool = tokens[safe: (index+1)...]
+							.first(where: { $0.kind != .separator })?.value.first?.isNumber == true
+
+						return (afterNumeric || beforeNumeric) && token.isSingleLetter
+					},
 					options: options
 				)
 			}
 
 			public let id: any Hashable & Sendable
-			public let predicate: @Sendable (Substring) -> Bool
+			public let predicate: @Sendable (Int, ArraySlice<String.Casification.Token>) -> Bool
 			public let options: String.Casification.Configuration.NumericBoundaryOptions
 
 			public init(
 				id: any Hashable & Sendable,
-				predicate: @Sendable @escaping (Substring) -> Bool,
+				predicate: @escaping @Sendable (Int, ArraySlice<String.Casification.Token>) -> Bool,
 				options: String.Casification.Configuration.NumericBoundaryOptions
 			) {
 				self.id = id

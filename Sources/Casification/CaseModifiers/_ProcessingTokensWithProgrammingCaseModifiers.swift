@@ -246,32 +246,25 @@ where Self == String.Casification.TokenProcessors.Inline {
 				}
 			}
 
-			let leadingNumericBoundary = prevToken?.value.last?.isNumber == true
-			if leadingNumericBoundary {
-				guard let nextToken else { return [] }
-
-				if
-					config.numbers.boundaryOptions.contains(
-						where: { $0.predicate(nextToken.value) && $0.options.contains(.disableSeparators) }
-					)
-				{ return [] }
-
-				if let numericSeparatorToken {
-					return [numericSeparatorToken]
+			do {
+				let matchingOptions = $config.numbers.boundaryOptions.filter { $0.predicate(index - 1, tokens) }
+				if matchingOptions.contains(where: { $0.options.contains(.disableSeparators) }) {
+					return []
 				}
 			}
 
-			let trailingNumericBoundary = nextToken?.value.first?.isNumber == true
-			if trailingNumericBoundary {
-				guard let prevToken else { return [] }
+			do {
+				let matchingOptions = $config.numbers.boundaryOptions.filter { $0.predicate(index + 1, tokens) }
+				if matchingOptions.contains(where: { $0.options.contains(.disableSeparators) }) {
+					return []
+				}
+			}
 
-				if
-					config.numbers.boundaryOptions.contains(
-						where: { $0.predicate(prevToken.value) && $0.options.contains(.disableSeparators) }
-					)
-				{ return [] }
+			do {
+				let numericBoundary = prevToken?.value.last?.isNumber == true
+				|| nextToken?.value.first?.isNumber == true
 
-				if let numericSeparatorToken {
+				if numericBoundary, let numericSeparatorToken {
 					return [numericSeparatorToken]
 				}
 			}
