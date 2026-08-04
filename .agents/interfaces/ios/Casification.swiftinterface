@@ -1,0 +1,1136 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+// swift-module-flags: -target arm64-apple-ios13.0-simulator -enable-objc-interop -swift-version 6 -O -module-name Casification -package-name swift_casification
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3.3
+import ConcurrencyExtras
+import Foundation
+import IssueReporting
+import KeyPathsExtensions
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+extension Swift.String.Casification.Modifiers {
+  public struct AnyModifier : Swift.String.Casification.Modifier {
+    @usableFromInline
+    internal let underlying: any Swift.String.Transformer
+    @inlinable public init<Modifier>(_ modifier: Modifier) where Modifier : Swift.String.Transformer {
+			self.underlying = modifier
+		}
+    public init(_ transform: @escaping (Swift.Substring) -> Swift.Substring)
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			underlying.transform(input)
+		}
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Inline : Swift.String.Casification.Modifier {
+    @usableFromInline
+    internal let _transform: (Swift.Substring) -> Swift.Substring
+    public init(_ transform: @escaping (Swift.Substring) -> Swift.Substring)
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			_transform(input)
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Inline {
+  public static func inline(_ transform: @escaping (Swift.Substring) -> Swift.Substring) -> Self
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Empty : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			return input
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Empty {
+  @inlinable public static var empty: Swift.String.Casification.Modifiers.Empty {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Upper : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input.uppercased()[...]
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Upper {
+  @inlinable public static var upper: Swift.String.Casification.Modifiers.Upper {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Lower : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input.lowercased()[...]
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Lower {
+  @inlinable public static var lower: Swift.String.Casification.Modifiers.Lower {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct UpperFirst : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input.prefix(1).uppercased() + input.dropFirst()
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.UpperFirst {
+  @inlinable public static var upperFirst: Swift.String.Casification.Modifiers.UpperFirst {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct LowerFirst : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input.prefix(1).lowercased() + input.dropFirst()
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.LowerFirst {
+  @inlinable public static var lowerFirst: Swift.String.Casification.Modifiers.LowerFirst {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Capital : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input.capitalized[...]
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Capital {
+  @inlinable public static var capital: Swift.String.Casification.Modifiers.Capital {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Swap : Swift.String.Casification.Modifier {
+    public init()
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input
+				.map {
+					if $0.isUppercase { $0.lowercased() }
+					else if $0.isLowercase { $0.uppercased() }
+					else { .init($0) }
+				}
+				.joined()[...]
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Swap {
+  @inlinable public static var swap: Swift.String.Casification.Modifiers.Swap {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Camel<PrefixPredicate> : Swift.String.Casification.Modifier where PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+    public typealias Config = Swift.String.Casification.Configuration.CamelCase
+    public typealias SeparatorProcessor = Swift.String.Casification.TokenProcessor
+    @usableFromInline
+    internal struct FirstTokenModifier : Swift.String.Casification.Modifier {
+      @usableFromInline
+      @Swift.String.Casification.ConfigurationReader<Swift.String.Casification.Configuration.CamelCase> @_projectedValueProperty($config) internal var config: Swift.String.Casification.Configuration.CamelCase {
+        get
+      }
+      @_hasInitialValue private var _config: Swift.String.Casification.ConfigurationReader<Swift.String.Casification.Configuration.CamelCase>
+      @usableFromInline
+      internal var mode: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode
+      @usableFromInline
+      internal init(mode: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode)
+      @usableFromInline
+      internal func withMode(_ mode: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode) -> Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.FirstTokenModifier
+      @usableFromInline
+      internal func transform(_ input: Swift.Substring) -> Swift.Substring
+    }
+    @usableFromInline
+    internal struct RestTokensModifier : Swift.String.Casification.Modifier {
+      @usableFromInline
+      internal var acronyms: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Acronyms
+      @usableFromInline
+      internal init(acronyms: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Acronyms)
+      @usableFromInline
+      internal func transform(_ input: Swift.Substring) -> Swift.Substring
+    }
+    @usableFromInline
+    @Swift.String.Casification.ConfigurationReader<Swift.String.Casification.Configuration.CamelCase> @_projectedValueProperty($config) internal var config: Swift.String.Casification.Configuration.CamelCase {
+      get
+    }
+    @_hasInitialValue private var _config: Swift.String.Casification.ConfigurationReader<Swift.String.Casification.Configuration.CamelCase>
+    @usableFromInline
+    internal var mode: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode
+    @usableFromInline
+    internal let prefixPredicate: PrefixPredicate
+    @usableFromInline
+    internal let separatorProcessor: any Swift.String.Casification.TokenProcessor
+    @usableFromInline
+    internal var modeAfterNumber: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode {
+      get
+    }
+    public init(mode: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode = .default, prefixPredicate: PrefixPredicate)
+    @usableFromInline
+    internal init(mode: Swift.String.Casification.Modifiers.Camel<PrefixPredicate>.Config.Mode = .default, prefixPredicate: PrefixPredicate, separatorProcessor: any Swift.String.Casification.TokenProcessor)
+    public func transform(_ input: Swift.Substring) -> Swift.Substring
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.Camel<Swift.String.Casification.PrefixPredicates.AllowedCharacters> {
+  @inlinable public static var camel: Swift.String.Casification.Modifiers.Camel<Swift.String.Casification.PrefixPredicates.AllowedCharacters> {
+    get {
+		.camel(.camel)
+	}
+  }
+  @inlinable public static var pascal: Swift.String.Casification.Modifiers.Camel<Swift.String.Casification.PrefixPredicates.AllowedCharacters> {
+    get {
+		.camel(.pascal)
+	}
+  }
+  @inlinable public static func camel(_ mode: Swift.String.Casification.Modifiers.Camel<Swift.String.Casification.PrefixPredicates.AllowedCharacters>.Config.Mode = .default) -> Self {
+		return .init(
+			mode: mode,
+			prefixPredicate: .swiftDeclarations
+		)
+	}
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.AnyModifier {
+  @inlinable public static func camel<PrefixPredicate>(_ mode: Swift.String.Casification.Configuration.CamelCase.Mode = .default, prefixPredicate: PrefixPredicate) -> Self where PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return .init(String.Casification.Modifiers.Camel(
+			mode: mode,
+			prefixPredicate: prefixPredicate
+		))
+	}
+}
+extension Swift.String.Casification.Token {
+  @usableFromInline
+  internal var isSingleLetter: Swift.Bool {
+    get
+  }
+}
+extension Swift.String.Casification.Modifiers {
+  public struct ProcessingTokens<Processor> : Swift.String.Casification.Modifier where Processor : Swift.String.Casification.TokensProcessor {
+    @usableFromInline
+    internal var processor: Processor
+    public init(using processor: Processor)
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			let tokens = input.tokenize(
+				using: .default()
+			)
+
+			return processor.processTokens(tokens[...]).reduce("") { buffer, token in
+				buffer.appending(token.value)
+			}[...]
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.AnyModifier {
+  @inlinable public static func processingTokens<Processor>(with processor: Processor) -> Self where Processor : Swift.String.Casification.TokensProcessor {
+		.init(String.Casification.Modifiers.ProcessingTokens(
+			using: processor
+		))
+	}
+}
+extension Swift.String {
+  public protocol Transformer {
+    @inlinable func transform(_ input: Swift.Substring) -> Swift.Substring
+  }
+}
+extension Swift.String.Casification {
+  public enum Modifiers {
+  }
+  public typealias Modifier = Swift.String.Transformer
+}
+extension Swift.String {
+  @inlinable public func `case`<Modifier>(_ modifier: Modifier) -> Swift.String where Modifier : Swift.String.Transformer {
+		return modifier.transform(self)
+	}
+}
+extension Swift.Substring {
+  @inlinable public func `case`<Modifier>(_ modifier: Modifier) -> Swift.Substring where Modifier : Swift.String.Transformer {
+		return modifier.transform(self)
+	}
+}
+extension Swift.String.Transformer {
+  @inlinable public func transform(_ input: Swift.String) -> Swift.String {
+		String(transform(input[...]))
+	}
+}
+extension Swift.String.Casification.Modifiers {
+  public struct Combine<First, Second> : Swift.String.Transformer where First : Swift.String.Transformer, Second : Swift.String.Transformer {
+    @usableFromInline
+    internal let first: First
+    @usableFromInline
+    internal let second: Second
+    public init(_ first: First, _ second: Second)
+    public func transform(_ input: Swift.Substring) -> Swift.Substring
+  }
+}
+extension Swift.String.Transformer {
+  public func combined<Other>(with other: Other) -> some Swift.String.Transformer where Other : Swift.String.Transformer
+  
+}
+extension Swift.String.Casification.Modifiers {
+  public struct _ProcessingTokensWithProgrammingCaseModifiers<FirstModifier, RestModifier, NumericModifier, SeparatorProcessor, PrefixPredicate> : Swift.String.Casification.Modifier where FirstModifier : Swift.String.Transformer, RestModifier : Swift.String.Transformer, NumericModifier : Swift.String.Transformer, SeparatorProcessor : Swift.String.Casification.TokenProcessor, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+    @usableFromInline
+    internal let firstModifier: FirstModifier
+    @usableFromInline
+    internal let restModifier: RestModifier
+    @usableFromInline
+    internal let numericModifier: NumericModifier
+    @usableFromInline
+    internal let prefixPredicate: PrefixPredicate
+    @usableFromInline
+    internal let separatorProcessor: SeparatorProcessor
+    public init(firstModifier: FirstModifier, restModifier: RestModifier, numericModifier: NumericModifier, separatorProcessor: SeparatorProcessor, prefixPredicate: PrefixPredicate)
+    @inlinable public func transform(_ input: Swift.Substring) -> Swift.Substring {
+			input.case(String.Casification.Modifiers.ProcessingTokens(
+				using: String.Casification.TokensProcessors._ProgrammingCaseModifiers(
+					prefixPredicate: prefixPredicate,
+					separatorProcessor: separatorProcessor,
+					firstModifier: firstModifier,
+					restModifier: restModifier,
+					numericModifier: numericModifier
+				)
+			))
+		}
+  }
+}
+extension Swift.String.Transformer where Self == Swift.String.Casification.Modifiers.AnyModifier {
+  @inlinable public static func _programmingCaseModifiers<FirstModifier, RestModifier, NumericModifier, SeparatorProcessor, PrefixPredicate>(firstModifier: FirstModifier, restModifier: RestModifier, numericModifier: NumericModifier, separatorProcessor: SeparatorProcessor, prefixPredicate: PrefixPredicate) -> Self where FirstModifier : Swift.String.Transformer, RestModifier : Swift.String.Transformer, NumericModifier : Swift.String.Transformer, SeparatorProcessor : Swift.String.Casification.TokenProcessor, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return .init(String.Casification.Modifiers._ProcessingTokensWithProgrammingCaseModifiers(
+			firstModifier: firstModifier,
+			restModifier: restModifier,
+			numericModifier: numericModifier,
+			separatorProcessor: separatorProcessor,
+			prefixPredicate: prefixPredicate
+		))
+	}
+  @inlinable public static func _programmingCaseModifiers<TokenModifier, SeparatorProcessor, PrefixPredicate>(tokenModifier: TokenModifier, separatorProcessor: SeparatorProcessor, prefixPredicate: PrefixPredicate) -> Self where TokenModifier : Swift.String.Transformer, SeparatorProcessor : Swift.String.Casification.TokenProcessor, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return .init(String.Casification.Modifiers._ProcessingTokensWithProgrammingCaseModifiers(
+			firstModifier: tokenModifier,
+			restModifier: tokenModifier,
+			numericModifier: tokenModifier,
+			separatorProcessor: separatorProcessor,
+			prefixPredicate: prefixPredicate
+		))
+	}
+  @inlinable public static var snake: Swift.String.Casification.Modifiers.AnyModifier {
+    get {
+		.snake(tokenModifier: .lower, prefixPredicate: .swiftDeclarations)
+	}
+  }
+  @inlinable public static func snake<PrefixPredicate>(prefixPredicate: PrefixPredicate) -> Self where PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return .snake(
+			tokenModifier: .lower,
+			prefixPredicate: prefixPredicate
+		)
+	}
+  @inlinable public static func snake<TokenModifier, PrefixPredicate>(tokenModifier: TokenModifier, prefixPredicate: PrefixPredicate) -> Self where TokenModifier : Swift.String.Transformer, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return ._programmingCaseModifiers(
+			tokenModifier: tokenModifier,
+			separatorProcessor: ._defaultProgrammingCaseSeparator("_"),
+			prefixPredicate: prefixPredicate
+		)
+	}
+  @inlinable public static var kebab: Swift.String.Casification.Modifiers.AnyModifier {
+    get {
+		.kebab(tokenModifier: .lower, prefixPredicate: .swiftDeclarations)
+	}
+  }
+  @inlinable public static func kebab<PrefixPredicate>(prefixPredicate: PrefixPredicate) -> Self where PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return .kebab(
+			tokenModifier: .lower,
+			prefixPredicate: prefixPredicate
+		)
+	}
+  @inlinable public static func kebab<TokenModifier, PrefixPredicate>(tokenModifier: TokenModifier, prefixPredicate: PrefixPredicate) -> Self where TokenModifier : Swift.String.Transformer, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return ._programmingCaseModifiers(
+			tokenModifier: tokenModifier,
+			separatorProcessor: ._defaultProgrammingCaseSeparator("-"),
+			prefixPredicate: prefixPredicate
+		)
+	}
+  @inlinable public static var dot: Swift.String.Casification.Modifiers.AnyModifier {
+    get {
+		.dot(tokenModifier: .lower, prefixPredicate: .swiftDeclarations)
+	}
+  }
+  @inlinable public static func dot<PrefixPredicate>(prefixPredicate: PrefixPredicate) -> Self where PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return .dot(
+			tokenModifier: .lower,
+			prefixPredicate: prefixPredicate
+		)
+	}
+  @inlinable public static func dot<TokenModifier, PrefixPredicate>(tokenModifier: TokenModifier, prefixPredicate: PrefixPredicate) -> Self where TokenModifier : Swift.String.Transformer, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+		return ._programmingCaseModifiers(
+			tokenModifier: tokenModifier,
+			separatorProcessor: ._defaultProgrammingCaseSeparator("."),
+			prefixPredicate: prefixPredicate
+		)
+	}
+}
+extension Swift.String.Casification.TokenProcessor where Self == Swift.String.Casification.TokenProcessors.Inline {
+  @usableFromInline
+  internal static func _defaultProgrammingCaseSeparator(_ defaultSeparator: Swift.Substring) -> Self
+}
+extension Swift.String {
+  public enum Casification {
+  }
+}
+extension Swift.String.Casification {
+  public enum Tokenizers {
+  }
+  public protocol Tokenizer {
+    @inlinable func tokenize(_ input: Swift.Substring) -> [Swift.String.Casification.Token]
+  }
+  public struct Token : Swift.Hashable, Swift.CustomStringConvertible {
+    public var value: Swift.Substring
+    public var kind: Swift.String.Casification.Token.Kind
+    public init(_ value: Swift.Substring = "", kind: Swift.String.Casification.Token.Kind)
+    @inlinable public func withValue(_ value: Swift.Substring) -> Swift.String.Casification.Token {
+			return .init(value, kind: kind)
+		}
+    public enum Kind : Swift.Hashable, Swift.CustomStringConvertible {
+      case word
+      case number
+      case acronym
+      case separator
+      public var description: Swift.String {
+        get
+      }
+      @_semantics("derived_enum_equals") @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_enum_equals(_ a: Swift.String.Casification.Token.Kind, _ b: Swift.String.Casification.Token.Kind) -> Swift.Bool
+      public func hash(into hasher: inout Swift.Hasher)
+      public var hashValue: Swift.Int {
+        get
+      }
+    }
+    public var description: Swift.String {
+      get
+    }
+    @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_struct_equals(_ a: Swift.String.Casification.Token, _ b: Swift.String.Casification.Token) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+extension Swift.String {
+  @inlinable public func tokenize<Tokenizer>(using tokenizer: Tokenizer) -> [Swift.String.Casification.Token] where Tokenizer : Swift.String.Casification.Tokenizer {
+		return self[...].tokenize(using: tokenizer)
+	}
+}
+extension Swift.Substring {
+  @inlinable public func tokenize<Tokenizer>(using tokenizer: Tokenizer) -> [Swift.String.Casification.Token] where Tokenizer : Swift.String.Casification.Tokenizer {
+		return tokenizer.tokenize(self[...])
+	}
+}
+extension Swift.String.Casification.Configuration {
+  public struct CamelCase : Swift.Equatable, Swift.Sendable {
+    public static var current: Swift.String.Casification.Configuration.CamelCase {
+      get
+    }
+    @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.CamelCase
+    public var numbers: Swift.String.Casification.Configuration.CamelCase.Numbers
+    public var acronyms: Swift.String.Casification.Configuration.CamelCase.Acronyms
+    public init(numbers: Swift.String.Casification.Configuration.CamelCase.Numbers = _Configuration.current.camelCase.numbers, acronyms: Swift.String.Casification.Configuration.CamelCase.Acronyms = _Configuration.current.camelCase.acronyms)
+    public enum Mode : Swift.Equatable, Swift.Sendable {
+      @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.CamelCase.Mode
+      case automatic
+      case camel
+      case pascal
+      @_semantics("derived_enum_equals") @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_enum_equals(_ a: Swift.String.Casification.Configuration.CamelCase.Mode, _ b: Swift.String.Casification.Configuration.CamelCase.Mode) -> Swift.Bool
+      public func hash(into hasher: inout Swift.Hasher)
+      public var hashValue: Swift.Int {
+        get
+      }
+    }
+    public struct Numbers : Swift.Equatable, Swift.Sendable {
+      public static var current: Swift.String.Casification.Configuration.CamelCase.Numbers {
+        get
+      }
+      @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.CamelCase.Numbers
+      public var nextTokenMode: Swift.String.Casification.Configuration.CamelCase.Numbers.NextTokenMode
+      public var separator: Swift.Substring
+      public init(nextTokenMode: Swift.String.Casification.Configuration.CamelCase.Numbers.NextTokenMode = .current, separator: Swift.Substring = CamelCase.current.numbers.separator)
+      public enum NextTokenMode : Swift.Equatable, Swift.Sendable {
+        public static var current: Swift.String.Casification.Configuration.CamelCase.Numbers.NextTokenMode {
+          get
+        }
+        @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.CamelCase.Numbers.NextTokenMode
+        case inherit
+        case override(_: Swift.String.Casification.Configuration.CamelCase.Mode = .automatic)
+        public var overridenValue: Swift.String.Casification.Configuration.CamelCase.Mode? {
+          get
+        }
+        @_semantics("derived_enum_equals") @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_enum_equals(_ a: Swift.String.Casification.Configuration.CamelCase.Numbers.NextTokenMode, _ b: Swift.String.Casification.Configuration.CamelCase.Numbers.NextTokenMode) -> Swift.Bool
+      }
+      @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_struct_equals(_ a: Swift.String.Casification.Configuration.CamelCase.Numbers, _ b: Swift.String.Casification.Configuration.CamelCase.Numbers) -> Swift.Bool
+    }
+    public struct Acronyms : Swift.Equatable, Swift.Sendable {
+      public static var current: Swift.String.Casification.Configuration.CamelCase.Acronyms {
+        get
+      }
+      @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.CamelCase.Acronyms
+      public var processingPolicy: Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy
+      public init(processingPolicy: Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy = .current)
+      public enum ProcessingPolicy : Swift.Equatable, Swift.Sendable {
+        public static var current: Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy {
+          get
+        }
+        @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy
+        case preserve
+        case alwaysMatchCase
+        case alwaysCapitalize
+        case conditionalCapitalization
+        @_semantics("derived_enum_equals") @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_enum_equals(_ a: Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy, _ b: Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy) -> Swift.Bool
+        public func hash(into hasher: inout Swift.Hasher)
+        public var hashValue: Swift.Int {
+          get
+        }
+      }
+      @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_struct_equals(_ a: Swift.String.Casification.Configuration.CamelCase.Acronyms, _ b: Swift.String.Casification.Configuration.CamelCase.Acronyms) -> Swift.Bool
+    }
+    @_implements(Swift.Equatable, ==(_:_:)) public static func __derived_struct_equals(_ a: Swift.String.Casification.Configuration.CamelCase, _ b: Swift.String.Casification.Configuration.CamelCase) -> Swift.Bool
+  }
+}
+extension Swift.String.Casification.Configuration {
+  public var camelCase: Swift.String.Casification.Configuration.CamelCase {
+    get
+    set
+  }
+}
+extension Swift.Set where Element == Swift.Substring {
+  public static var currentAcronyms: Swift.Set<Swift.Substring> {
+    get
+  }
+  @_hasInitialValue public static let defaultAcronyms: Swift.Set<Swift.Substring>
+}
+extension Swift.String.Casification.Configuration.Common {
+  public var acronyms: Swift.Set<Swift.Substring> {
+    get
+    set
+  }
+}
+extension Swift.String.Casification.Configuration {
+  public var acronyms: Swift.Set<Swift.Substring> {
+    get
+    set
+  }
+}
+extension Swift.String.Casification.Configuration {
+  public struct Common : Swift.Sendable {
+    public typealias _CommonConfiguration = Swift.String.Casification.Configuration.Common
+    public init()
+    public subscript<T>(key: T.Type) -> T.Value where T : Swift.String.Casification.ConfigurationKey {
+      get
+      set
+    }
+  }
+}
+extension Swift.String.Casification.Configuration {
+  public var common: Swift.String.Casification.Configuration.Common {
+    get
+    set
+  }
+}
+extension Swift.String.Casification.Configuration.Common {
+  public struct Numbers : Swift.Sendable {
+    public typealias NumericBoundaryOptions = Swift.String.Casification.Configuration.NumericBoundaryOptions
+    public static var current: Swift.String.Casification.Configuration.Common.Numbers {
+      get
+    }
+    @_hasInitialValue public static let `default`: Swift.String.Casification.Configuration.Common.Numbers
+    public var allowedDelimeters: Swift.Set<Swift.Character>
+    public var boundaryOptions: Swift.Set<Swift.String.Casification.Configuration.Common.Numbers.BoundaryOption>
+    public init(allowedDelimeters: Swift.Set<Swift.Character> = String.Casification.Configuration.current.common.numbers.allowedDelimeters, boundaryOptions: Swift.Set<Swift.String.Casification.Configuration.Common.Numbers.BoundaryOption> = String.Casification.Configuration.current.common.numbers.boundaryOptions)
+    public struct BoundaryOption : Swift.Sendable, Swift.Hashable {
+      public static func endingNumber(_ options: Swift.String.Casification.Configuration.Common.Numbers.NumericBoundaryOptions) -> Swift.String.Casification.Configuration.Common.Numbers.BoundaryOption
+      public static func singleLetter(_ options: Swift.String.Casification.Configuration.Common.Numbers.NumericBoundaryOptions) -> Swift.String.Casification.Configuration.Common.Numbers.BoundaryOption
+      public let id: any Swift.Hashable & Swift.Sendable
+      public let predicate: @Sendable (Swift.Int, Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.Bool
+      public let options: Swift.String.Casification.Configuration.NumericBoundaryOptions
+      public init(id: any Swift.Hashable & Swift.Sendable, predicate: @escaping @Sendable (Swift.Int, Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.Bool, options: Swift.String.Casification.Configuration.NumericBoundaryOptions)
+      public static func == (lhs: Swift.String.Casification.Configuration.Common.Numbers.BoundaryOption, rhs: Swift.String.Casification.Configuration.Common.Numbers.BoundaryOption) -> Swift.Bool
+      public func hash(into hasher: inout Swift.Hasher)
+      public var hashValue: Swift.Int {
+        get
+      }
+    }
+  }
+}
+extension Swift.String.Casification.Configuration.Common {
+  public var numbers: Swift.String.Casification.Configuration.Common.Numbers {
+    get
+    set
+  }
+}
+extension Swift.String.Casification.Configuration {
+  public struct NumericBoundaryOptions : Swift.OptionSet, Swift.Equatable, Swift.Sendable {
+    public var rawValue: Swift.UInt
+    public init(rawValue: Swift.UInt)
+    public static var disableSeparators: Swift.String.Casification.Configuration.NumericBoundaryOptions {
+      get
+    }
+    public static var disableTokenProcessing: Swift.String.Casification.Configuration.NumericBoundaryOptions {
+      get
+    }
+    public typealias ArrayLiteralElement = Swift.String.Casification.Configuration.NumericBoundaryOptions
+    public typealias Element = Swift.String.Casification.Configuration.NumericBoundaryOptions
+    public typealias RawValue = Swift.UInt
+  }
+}
+extension Swift.String.Casification.Configuration {
+  @_hasInitialValue public static let $_current: _Concurrency.TaskLocal<ConcurrencyExtras.LockIsolated<Swift.String.Casification.Configuration>>
+  public static var current: Swift.String.Casification.Configuration {
+    get
+  }
+}
+extension Swift.String.Casification {
+  public static func prepareConfiguration(_ newConfiguration: Swift.String.Casification.Configuration, fileID: Swift.StaticString = #fileID, filePath: Swift.StaticString = #filePath, line: Swift.UInt = #line, column: Swift.UInt = #column)
+  public static func prepareConfiguration<R>(_ updateValues: @Sendable (inout Swift.String.Casification.Configuration) throws -> R, fileID: Swift.StaticString = #fileID, filePath: Swift.StaticString = #filePath, line: Swift.UInt = #line, column: Swift.UInt = #column) rethrows -> R
+}
+@discardableResult
+public func withCasification<R>(_ configurationForOperation: Swift.String.Casification.Configuration, operation: () throws -> R) rethrows -> R
+@discardableResult
+public func withCasification<R>(_ updateConfigurationForOperation: (inout Swift.String.Casification.Configuration) throws -> Swift.Void, operation: () throws -> R) rethrows -> R
+@discardableResult
+public func withCasification<R>(isolation: isolated (any _Concurrency.Actor)? = #isolation, _ configurationForOperation: Swift.String.Casification.Configuration, operation: () async throws -> R) async rethrows -> R
+@discardableResult
+public func withCasification<R>(isolation: isolated (any _Concurrency.Actor)? = #isolation, _ updateConfigurationForOperation: (inout Swift.String.Casification.Configuration) async throws -> Swift.Void, operation: () async throws -> R) async rethrows -> R
+extension Swift.String.Casification {
+  public struct Configuration : Swift.Sendable {
+    public typealias _Configuration = Swift.String.Casification.Configuration
+    public init()
+    public subscript<T>(key: T.Type) -> T.Value where T : Swift.String.Casification.ConfigurationKey {
+      get
+      set
+    }
+  }
+}
+extension Swift.String.Casification {
+  public protocol ConfigurationKey : Swift.Sendable {
+    associatedtype Value : Swift.Sendable = Self
+    static var `default`: Self.Value { get }
+  }
+}
+extension Swift.String.Casification {
+  @propertyWrapper public struct ConfigurationReader<T> : Swift.Sendable {
+    @usableFromInline
+    @_hasInitialValue internal var cachedConfiguration: Swift.String.Casification.Configuration
+    internal let keyPath: KeyPathsExtensions._SendableKeyPath<Swift.String.Casification.Configuration, T>
+    public init(_ keyPath: any Swift.KeyPath<Swift.String.Casification.Configuration, T> & Swift.Sendable)
+    public var wrappedValue: T {
+      get
+    }
+    public var projectedValue: Swift.String.Casification.Configuration.Common {
+      get
+    }
+  }
+}
+extension Swift.String.Casification.ConfigurationReader where T == Swift.String.Casification.Configuration {
+  public init()
+}
+@available(*, deprecated, renamed: "String.Casification.prepareConfiguration")
+public func prepareAcronyms(_ newValues: Swift.Set<Swift.Substring>, fileID: Swift.StaticString = #fileID, filePath: Swift.StaticString = #filePath, line: Swift.UInt = #line, column: Swift.UInt = #column)
+@available(*, deprecated, renamed: "String.Casification.prepareConfiguration")
+public func prepareAcronyms<R>(_ updateValues: @Sendable (inout Swift.Set<Swift.Substring>) throws -> R, fileID: Swift.StaticString = #fileID, filePath: Swift.StaticString = #filePath, line: Swift.UInt = #line, column: Swift.UInt = #column) rethrows -> R
+@usableFromInline
+internal func reduce<Value>(_ value: Value, _ transform: (inout Value) -> Swift.Void) -> Value
+extension Swift.Collection {
+  @usableFromInline
+  internal var isNotEmpty: Swift.Bool {
+    get
+  }
+}
+extension Swift.MutableCollection {
+  @usableFromInline
+  internal subscript(safe index: Self.Index?) -> Self.Element? {
+    get
+    set
+  }
+  @usableFromInline
+  internal subscript(safe index: Self.Index) -> Self.Element? {
+    get
+    set
+  }
+}
+extension Swift.Collection {
+  @usableFromInline
+  internal subscript(safe index: Self.Index?) -> Self.Element? {
+    get
+  }
+  @usableFromInline
+  internal subscript(safe index: Self.Index) -> Self.Element? {
+    get
+  }
+}
+extension Swift.Collection where Self.SubSequence : Swift.ExpressibleByArrayLiteral {
+  @usableFromInline
+  internal subscript(safe range: Swift.Range<Self.Index>) -> Self.SubSequence {
+    get
+  }
+  @usableFromInline
+  internal subscript(safe range: Swift.ClosedRange<Self.Index>) -> Self.SubSequence {
+    get
+  }
+  @usableFromInline
+  internal subscript(safe range: Swift.PartialRangeFrom<Self.Index>) -> Self.SubSequence {
+    get
+  }
+  @usableFromInline
+  internal subscript(safe range: Swift.PartialRangeUpTo<Self.Index>) -> Self.SubSequence {
+    get
+  }
+  @usableFromInline
+  internal subscript(safe range: Swift.PartialRangeThrough<Self.Index>) -> Self.SubSequence {
+    get
+  }
+}
+extension Swift.String.Casification.Tokenizer where Self == Swift.String.Casification.Tokenizers.Default {
+  @inlinable public static func `default`() -> Self { .init() }
+}
+extension Swift.String.Casification.Tokenizers {
+  public struct Default : Swift.String.Casification.Tokenizer {
+    @usableFromInline
+    @Swift.String.Casification.ConfigurationReader<Swift.String.Casification.Configuration.Common> @_projectedValueProperty($config) internal var config: Swift.String.Casification.Configuration.Common {
+      get
+    }
+    @_hasInitialValue private var _config: Swift.String.Casification.ConfigurationReader<Swift.String.Casification.Configuration.Common>
+    @usableFromInline
+    @Swift.String.Casification.ConfigurationReader<Swift.Set<Swift.Substring>> @_projectedValueProperty($acronyms) internal var acronyms: Swift.Set<Swift.Substring> {
+      get
+    }
+    @_hasInitialValue private var _acronyms: Swift.String.Casification.ConfigurationReader<Swift.Set<Swift.Substring>>
+    public init()
+    @inlinable public func tokenize(_ input: Swift.Substring) -> [Swift.String.Casification.Token] {
+			let acronyms = acronyms.sorted(by: { $0.count > $1.count })
+
+			var tokens: [String.Casification.Token] = []
+			var currentStart = input.startIndex
+			var currentIndex = input.startIndex
+
+			func commitToken(upTo end: String.Index) {
+				guard currentStart < end else { return }
+				let value = input[currentStart..<end]
+				commitToken(value, kind: value.allSatisfy(\.isNumber) ? .number : .word)
+			}
+
+			func commitToken(_ value: Substring, kind: String.Casification.Token.Kind) {
+				if let last = tokens.last, last.kind != .separator, kind != .separator {
+					commitToken("", kind: .separator)
+				}
+
+				tokens.append(.init(value, kind: kind))
+			}
+
+			func getAcronym(at index: String.Index) -> Substring? {
+				acronyms.first { acronym in
+					guard let end = input.index(index, offsetBy: acronym.count, limitedBy: input.endIndex)
+					else { return false }
+
+					if input[index..<end] != acronym { return false }
+
+					if end == input.endIndex { return true }
+
+					let nextChar = input[end]
+
+					 
+					if !nextChar.isLetter { return true }
+
+					guard let lastChar = acronym.last else { return false }
+
+					 
+					if lastChar.isUppercase != nextChar.isUppercase { return true }
+
+					 
+					let afterNext = input.index(after: end)
+					if nextChar.isUppercase,
+						 afterNext < input.endIndex,
+						 input[afterNext].isLowercase {
+						return true
+					}
+
+					 
+					return getAcronym(at: end) != nil
+				}.map { acronym in
+					let end = input.index(index, offsetBy: acronym.count)
+					return input[index..<end]
+				}
+			}
+
+			while currentIndex < input.endIndex {
+				do {  
+					if let acronym = getAcronym(at: currentIndex) {
+						var isSuffixOfOtherToken: Bool {
+							if currentStart == currentIndex { return false }
+
+							let prevIdx = input.index(
+								before: currentIndex,
+								limitedBy: input.startIndex
+							)
+
+							guard let prevIdx else { return false }
+
+							let prevChar = input[prevIdx]
+							let currChar = input[currentIndex]
+
+							return prevChar.isUppercase || currChar.isLowercase
+						}
+
+						if !isSuffixOfOtherToken {
+							commitToken(upTo: currentIndex)
+
+							let end = input.index(currentIndex, offsetBy: acronym.count)
+							commitToken(input[currentIndex..<end], kind: .acronym)
+							currentIndex = end
+							currentStart = end
+							continue
+						}
+					}
+				}
+
+				do {  
+					let char = input[currentIndex]
+					if !char.isAlphanumeric {
+						if
+							config.numbers.allowedDelimeters.isNotEmpty,
+							let prev = input[safe: input.index(before: currentIndex)],
+							let next = input[safe: input.index(after: currentIndex)],
+							prev.isNumber, next.isNumber, config.numbers.allowedDelimeters.contains(char)
+						{
+							currentIndex = input.index(after: currentIndex)
+							continue
+						} else {
+							commitToken(upTo: currentIndex)
+
+							let start = currentIndex
+							while
+								currentIndex < input.endIndex,
+								!input[currentIndex].isAlphanumeric
+							{
+								currentIndex = input.index(after: currentIndex)
+							}
+							commitToken(input[start..<currentIndex], kind: .separator)
+							currentStart = currentIndex
+							continue
+						}
+					}
+				}
+
+				do {  
+					let nextIndex = input.index(after: currentIndex)
+					if nextIndex < input.endIndex {
+						let curr = input[currentIndex]
+						let next = input[nextIndex]
+
+						let shouldCommit = (curr.isLowercase && next.isUppercase)
+						|| (curr.isLetter && next.isNumber)
+						|| (curr.isNumber && next.isLetter)
+
+						if shouldCommit {
+							currentIndex = nextIndex
+							commitToken(upTo: currentIndex)
+							currentStart = currentIndex
+							continue
+						}
+					}
+				}
+
+				currentIndex = input.index(after: currentIndex)
+			}
+
+			commitToken(upTo: currentIndex)
+			return tokens
+		}
+  }
+}
+extension Swift.Character {
+  @usableFromInline
+  internal var isAlphanumeric: Swift.Bool {
+    get
+  }
+}
+extension Swift.StringProtocol {
+  @usableFromInline
+  internal var lastIndex: Swift.String.Index? {
+    get
+  }
+  @usableFromInline
+  internal func index(before other: Self.Index, limitedBy limit: Self.Index) -> Self.Index?
+  @usableFromInline
+  internal func index(after other: Self.Index, limitedBy limit: Self.Index) -> Self.Index?
+}
+extension Swift.String.Casification {
+  public enum TokenProcessors {
+  }
+  public protocol TokenProcessor {
+    @inlinable func processToken(at index: Swift.Int, in tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>
+  }
+}
+extension Swift.String.Casification.TokenProcessors {
+  public struct AnyTokenProcessor : Swift.String.Casification.TokenProcessor {
+    @usableFromInline
+    internal let underlyingProcessor: any Swift.String.Casification.TokenProcessor
+    public init<Processor>(_ processor: Processor) where Processor : Swift.String.Casification.TokenProcessor
+    public init(_ process: @escaping (Swift.Int, Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>)
+    @inlinable public func processToken(at index: Swift.Int, in tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			underlyingProcessor.processToken(at: index, in: tokens)
+		}
+  }
+  public struct Inline : Swift.String.Casification.TokenProcessor {
+    @usableFromInline
+    internal let process: (Swift.Int, Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>
+    public init(_ process: @escaping (Swift.Int, Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>)
+    @inlinable public func processToken(at index: Swift.Int, in tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			process(index, tokens)
+		}
+  }
+}
+extension Swift.String.Casification.TokenProcessor where Self == Swift.String.Casification.TokenProcessors.Inline {
+  public static func inline(_ process: @escaping (Swift.Int, Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>) -> Self
+}
+extension Swift.String.Casification.TokenProcessors {
+  public struct Empty : Swift.String.Casification.TokenProcessor {
+    public init()
+    @inlinable public func processToken(at index: Swift.Int, in tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			tokens[safe: index].map { [$0] } ?? []
+		}
+  }
+}
+extension Swift.String.Casification.TokenProcessor where Self == Swift.String.Casification.TokenProcessors.Empty {
+  @inlinable public static var empty: Swift.String.Casification.TokenProcessors.Empty {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification {
+  public enum TokensProcessors {
+  }
+  public protocol TokensProcessor {
+    @inlinable func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>
+  }
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct AnyTokensProcessor : Swift.String.Casification.TokensProcessor {
+    @usableFromInline
+    internal let underlying: any Swift.String.Casification.TokensProcessor
+    public init<Processor>(_ processor: Processor) where Processor : Swift.String.Casification.TokensProcessor
+    public init(_ process: @escaping (Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>)
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			underlying.processTokens(tokens)
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct Inline : Swift.String.Casification.TokensProcessor {
+    @usableFromInline
+    internal let process: (Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>
+    public init(_ process: @escaping (Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>)
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			process(tokens)
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessor where Self == Swift.String.Casification.TokensProcessors.Inline {
+  @inlinable public static func inline(_ process: @escaping (Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>) -> Self {
+		return .init(process)
+	}
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct Empty : Swift.String.Casification.TokensProcessor {
+    public init()
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			tokens
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessor where Self == Swift.String.Casification.TokensProcessors.Empty {
+  @inlinable public static var empty: Swift.String.Casification.TokensProcessors.Empty {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct RemoveAll : Swift.String.Casification.TokensProcessor {
+    public init()
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			[]
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessor where Self == Swift.String.Casification.TokensProcessors.RemoveAll {
+  @inlinable public static var removeAll: Swift.String.Casification.TokensProcessors.RemoveAll {
+    get { .init() }
+  }
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct Filter : Swift.String.Casification.TokensProcessor {
+    @usableFromInline
+    internal let predicate: (Swift.String.Casification.Token) -> Swift.Bool
+    public init(_ predicate: @escaping (Swift.String.Casification.Token) -> Swift.Bool)
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			tokens.filter(predicate)[...]
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessor where Self == Swift.String.Casification.TokensProcessors.Filter {
+  @inlinable public static func filter(_ predicate: @escaping (Swift.String.Casification.Token) -> Swift.Bool) -> Self { .init(predicate) }
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct ReduceValues : Swift.String.Casification.TokensProcessor {
+    @usableFromInline
+    internal let initialResult: Swift.Substring
+    @usableFromInline
+    internal let kind: Swift.String.Casification.Token.Kind
+    @usableFromInline
+    internal let process: (inout Swift.Substring, Swift.String.Casification.Token) -> Swift.Void
+    public init(into initialResult: Swift.Substring = "", kind: Swift.String.Casification.Token.Kind, _ process: @escaping (inout Swift.Substring, Swift.String.Casification.Token) -> Swift.Void)
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			return [
+				.init(tokens.reduce(into: initialResult, process), kind: kind)
+			]
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessor where Self == Swift.String.Casification.TokensProcessors.ReduceValues {
+  @inlinable public static func reduceValues(into initialResult: Swift.Substring = "", kind: Swift.String.Casification.Token.Kind, _ process: @escaping (inout Swift.Substring, Swift.String.Casification.Token) -> Swift.Void) -> Self {
+		.init(
+			into: initialResult,
+			kind: kind,
+			process
+		)
+	}
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct Combine<First, Second> : Swift.String.Casification.TokensProcessor where First : Swift.String.Casification.TokensProcessor, Second : Swift.String.Casification.TokensProcessor {
+    @usableFromInline
+    internal let first: First
+    @usableFromInline
+    internal let second: Second
+    public init(_ first: First, _ second: Second)
+    public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token>
+  }
+}
+extension Swift.String.Casification.TokensProcessor {
+  @inlinable public func combined<Other>(with other: Other) -> some Swift.String.Casification.TokensProcessor where Other : Swift.String.Casification.TokensProcessor {
+		String.Casification.TokensProcessors.Combine(self, other)
+	}
+  
+}
+extension Swift.String.Casification {
+  public enum PrefixPredicates {
+  }
+  public protocol PrefixPredicate {
+    @inlinable func isCharacterAllowed(_ charcter: Swift.Character) -> Swift.Bool
+  }
+}
+extension Swift.String.Casification.TokensProcessors {
+  public struct _ProgrammingCaseModifiers<TokenProcessor, PrefixPredicate> : Swift.String.Casification.TokensProcessor where TokenProcessor : Swift.String.Casification.TokenProcessor, PrefixPredicate : Swift.String.Casification.PrefixPredicate {
+    @usableFromInline
+    internal let tokenProcessor: TokenProcessor
+    @usableFromInline
+    internal let prefixPredicate: PrefixPredicate
+    public init(tokenProcessor: TokenProcessor, prefixPredicate: PrefixPredicate)
+    @inlinable public func processTokens(_ tokens: Swift.ArraySlice<Swift.String.Casification.Token>) -> Swift.ArraySlice<Swift.String.Casification.Token> {
+			guard
+				let firstNonSeparatorIndex = tokens.firstIndex(where: { $0.kind != .separator }),
+				let lastNonSeparatorIndex = tokens.lastIndex(where: { $0.kind != .separator })
+			else { return tokens }
+
+			var output: [String.Casification.Token] = []
+
+			do {  
+				let collectedPrefix = tokens[..<firstNonSeparatorIndex].reduce("") { buffer, token in
+					buffer.appending(token.value.filter(prefixPredicate.isCharacterAllowed))
+				}[...]
+
+				if collectedPrefix.isNotEmpty {
+					output.append(.init(collectedPrefix, kind: .separator))
+				}
+			}
+
+
+			do {  
+				let tokens = tokens[firstNonSeparatorIndex...lastNonSeparatorIndex]
+
+				for index in tokens.indices {
+					output.append(contentsOf: tokenProcessor.processToken(at: index, in: tokens))
+				}
+			}
+
+			return output[...]
+		}
+  }
+}
+extension Swift.String.Casification.TokensProcessors._ProgrammingCaseModifiers where TokenProcessor == Swift.String.Casification.TokenProcessors.AnyTokenProcessor {
+  public init<FirstModifier, RestModifier, NumericModifier, SeparatorProcessor>(prefixPredicate: PrefixPredicate, separatorProcessor: SeparatorProcessor, firstModifier: FirstModifier, restModifier: RestModifier, numericModifier: NumericModifier) where FirstModifier : Swift.String.Transformer, RestModifier : Swift.String.Transformer, NumericModifier : Swift.String.Transformer, SeparatorProcessor : Swift.String.Casification.TokenProcessor
+}
+extension Swift.String.Casification.PrefixPredicates {
+  public struct Const : Swift.String.Casification.PrefixPredicate {
+    @usableFromInline
+    internal let value: Swift.Bool
+    public init(_ value: Swift.Bool)
+    @inlinable public func isCharacterAllowed(_ character: Swift.Character) -> Swift.Bool {
+			return value
+		}
+  }
+}
+extension Swift.String.Casification.PrefixPredicate where Self == Swift.String.Casification.PrefixPredicates.Const {
+  @inlinable public static func const(_ value: Swift.Bool) -> Self {
+		return .init(value)
+	}
+}
+extension Swift.String.Casification.PrefixPredicates {
+  public struct AllowedCharacters : Swift.String.Casification.PrefixPredicate {
+    @usableFromInline
+    internal let allowedCharacters: Swift.Set<Swift.Character>
+    public init(_ allowedCharacters: Swift.Set<Swift.Character>)
+    @inlinable public func isCharacterAllowed(_ character: Swift.Character) -> Swift.Bool {
+			return allowedCharacters.contains(character)
+		}
+  }
+}
+extension Swift.String.Casification.PrefixPredicate where Self == Swift.String.Casification.PrefixPredicates.AllowedCharacters {
+  @inlinable public static func allowedCharacters<S>(_ characters: S) -> Self where S : Swift.Sequence, S.Element == Swift.Character {
+		return .init(Set(characters))
+	}
+  @inlinable public static var swiftDeclarations: Swift.String.Casification.PrefixPredicates.AllowedCharacters {
+    get {
+		.allowedCharacters("$_")
+	}
+  }
+}
+extension Swift.String.Casification.PrefixPredicates {
+  public struct AnyPrefixPredicate : Swift.String.Casification.PrefixPredicate {
+    @usableFromInline
+    internal let predicate: (Swift.Character) -> Swift.Bool
+    @inlinable public init<Predicate>(_ predicate: Predicate) where Predicate : Swift.String.Casification.PrefixPredicate {
+			self.init(predicate.isCharacterAllowed)
+		}
+    public init(_ predicate: @escaping (Swift.Character) -> Swift.Bool)
+    @inlinable public func isCharacterAllowed(_ character: Swift.Character) -> Swift.Bool {
+			return predicate(character)
+		}
+  }
+}
+extension Swift.String.Casification.PrefixPredicate where Self == Swift.String.Casification.PrefixPredicates.AnyPrefixPredicate {
+  @inlinable public static func custom(_ predicate: @escaping (Swift.Character) -> Swift.Bool) -> Self {
+		return .init(predicate)
+	}
+}
+@discardableResult
+public func withAcronyms<R>(_ valuesForOperation: Swift.Set<Swift.Substring>, operation: () throws -> R) rethrows -> R
+@discardableResult
+public func withAcronyms<R>(_ updateValuesForOperation: (inout Swift.Set<Swift.Substring>) throws -> Swift.Void, operation: () throws -> R) rethrows -> R
+@discardableResult
+public func withAcronyms<R>(isolation: isolated (any _Concurrency.Actor)? = #isolation, _ valuesForOperation: Swift.Set<Swift.Substring>, operation: () async throws -> R) async rethrows -> R
+@discardableResult
+public func withAcronyms<R>(isolation: isolated (any _Concurrency.Actor)? = #isolation, _ updateValuesForOperation: (inout Swift.Set<Swift.Substring>) async throws -> Swift.Void, operation: () async throws -> R) async rethrows -> R
+extension Swift.String.Casification.Configuration.CamelCase.Mode : Swift.Hashable {}
+extension Swift.String.Casification.Configuration.CamelCase.Acronyms.ProcessingPolicy : Swift.Hashable {}
