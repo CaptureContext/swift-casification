@@ -23,8 +23,8 @@ let package = Package(
 			.upToNextMajor(from: "1.3.0")
 		),
 		.package(
-			url: "https://github.com/pointfreeco/xctest-dynamic-overlay.git",
-			.upToNextMajor(from: "1.9.0")
+			url: "https://github.com/pointfreeco/swift-issue-reporting.git",
+			.upToNextMajor(from: "2.0.0")
 		),
 		.package(
 			url: "https://github.com/capturecontext/swift-keypaths-extensions.git",
@@ -41,7 +41,7 @@ let package = Package(
 				),
 				.product(
 					name: "IssueReporting",
-					package: "xctest-dynamic-overlay"
+					package: "swift-issue-reporting"
 				),
 				.product(
 					name: "KeyPathsExtensions",
