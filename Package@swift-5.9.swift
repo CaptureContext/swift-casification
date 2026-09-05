@@ -2,6 +2,16 @@
 
 import PackageDescription
 
+// Match Point-Free's package identity for this compiler's compatibility manifests.
+#if compiler(>=6.4)
+let issueReportingPackage: String = "swift-issue-reporting"
+let issueReportingVersion: Version = "2.0.0"
+#else
+let issueReportingPackage: String = "xctest-dynamic-overlay"
+// 1.5 retains Swift 5.9 support; newer compilers can resolve newer 1.x releases.
+let issueReportingVersion: Version = "1.5.0"
+#endif
+
 let package = Package(
 	name: "swift-casification",
 	platforms: [
@@ -23,8 +33,8 @@ let package = Package(
 			.upToNextMajor(from: "1.3.0")
 		),
 		.package(
-			url: "https://github.com/pointfreeco/swift-issue-reporting.git",
-			.upToNextMajor(from: "2.0.0")
+			url: "https://github.com/pointfreeco/\(issueReportingPackage).git",
+			.upToNextMajor(from: issueReportingVersion)
 		),
 		.package(
 			url: "https://github.com/capturecontext/swift-keypaths-extensions.git",
@@ -41,7 +51,7 @@ let package = Package(
 				),
 				.product(
 					name: "IssueReporting",
-					package: "swift-issue-reporting"
+					package: issueReportingPackage
 				),
 				.product(
 					name: "KeyPathsExtensions",
